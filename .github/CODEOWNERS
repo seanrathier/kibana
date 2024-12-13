@@ -899,7 +899,6 @@ x-pack/plugins/grokdebugger @elastic/kibana-management
 x-pack/plugins/index_lifecycle_management @elastic/kibana-management
 x-pack/plugins/index_management @elastic/kibana-management
 x-pack/plugins/ingest_pipelines @elastic/kibana-management
-x-pack/plugins/kubernetes_security @elastic/kibana-cloud-security-posture
 x-pack/plugins/lens @elastic/kibana-visualizations
 x-pack/plugins/license_api_guard @elastic/kibana-management
 x-pack/plugins/license_management @elastic/kibana-management
@@ -999,6 +998,7 @@ x-pack/solutions/security/packages/upselling @elastic/security-threat-hunting-ex
 x-pack/solutions/security/plugins/asset_inventory @elastic/kibana-cloud-security-posture
 x-pack/solutions/security/plugins/cloud_defend @elastic/kibana-cloud-security-posture
 x-pack/solutions/security/plugins/cloud_security_posture @elastic/kibana-cloud-security-posture
+x-pack/solutions/security/plugins/kubernetes_security @elastic/kibana-cloud-security-posture
 x-pack/solutions/security/plugins/threat_intelligence @elastic/security-threat-hunting-investigations
 x-pack/solutions/security/plugins/timelines @elastic/security-threat-hunting-investigations
 x-pack/test
