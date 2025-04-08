@@ -30,6 +30,7 @@ import type { PackagePolicyValidationResults } from '../../services';
 import { AGENTLESS_DISABLED_INPUTS } from '../../../../../../../../common/constants';
 
 import { PackagePolicyInputPanel } from './components';
+import { CloudSetup } from './components/cloud_setup/cloud_setup';
 
 export const StepConfigurePackagePolicy: React.FunctionComponent<{
   packageInfo: PackageInfo;
@@ -68,7 +69,8 @@ export const StepConfigurePackagePolicy: React.FunctionComponent<{
       <>
         {!noTopRule && <EuiHorizontalRule margin="m" />}
         <EuiFlexGroup direction="column" gutterSize="none">
-          {packagePolicyTemplates.map((policyTemplate) => {
+          <CloudSetup cloudProviderStreamInput={undefined} isEditPage={false} />
+          {/* {packagePolicyTemplates.map((policyTemplate) => {
             const inputs = getNormalizedInputs(policyTemplate);
             const packagePolicyInputs = packagePolicy.inputs;
             return inputs.map((packageInput) => {
@@ -127,7 +129,7 @@ export const StepConfigurePackagePolicy: React.FunctionComponent<{
                 </EuiFlexItem>
               ) : null;
             });
-          })}
+          })} */}
         </EuiFlexGroup>
       </>
     ) : (
