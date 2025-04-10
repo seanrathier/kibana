@@ -9,22 +9,21 @@ import { i18n } from '@kbn/i18n';
 import { FormattedMessage } from '@kbn/i18n-react';
 import React from 'react';
 
-import type { CspRadioGroupProps } from './cloud_provider_selector';
-import { RadioGroup } from './cloud_provider_selector';
-
-export const AWS_SINGLE_ACCOUNT = 'single-account';
-export const AWS_ORGANIZATION_ACCOUNT = 'organization-account';
+import type { CspRadioGroupProps } from '../cloud_provider_selector';
+import { RadioGroup } from '../cloud_provider_selector';
+import { ORGANIZATION_ACCOUNT, SINGLE_ACCOUNT } from '../constants';
+import type { AccountTypes } from '../types';
 
 const getAwsAccountTypeOptions = (): CspRadioGroupProps['options'] => [
   {
-    id: AWS_ORGANIZATION_ACCOUNT,
+    id: ORGANIZATION_ACCOUNT,
     label: i18n.translate('xpack.csp.fleetIntegration.awsAccountType.awsOrganizationLabel', {
       defaultMessage: 'AWS Organization',
     }),
     testId: 'awsOrganizationTestId',
   },
   {
-    id: AWS_SINGLE_ACCOUNT,
+    id: SINGLE_ACCOUNT,
     label: i18n.translate('xpack.csp.fleetIntegration.awsAccountType.singleAccountLabel', {
       defaultMessage: 'Single Account',
     }),
@@ -46,7 +45,7 @@ export const AwsAccountTypeSelect = ({
   // updatePolicy: (updatedPolicy: NewPackagePolicy, isExtensionLoaded?: boolean) => void;
   // packageInfo: PackageInfo;
   selectedAccountType: string;
-  onChangeAccountType: (accountType: string) => void;
+  onChangeAccountType: (accountType: AccountTypes) => void;
   disabled: boolean;
 }) => {
   // This will disable the aws org option for any version below 1.5.0-preview20 which introduced support for account_type. https://github.com/elastic/integrations/pull/6682
@@ -87,7 +86,7 @@ export const AwsAccountTypeSelect = ({
         onChange={onChangeAccountType}
         size="m"
       />
-      {selectedAccountType === AWS_ORGANIZATION_ACCOUNT && (
+      {selectedAccountType === ORGANIZATION_ACCOUNT && (
         <>
           <EuiSpacer size="l" />
           <EuiText color="subdued" size="s">
@@ -98,7 +97,7 @@ export const AwsAccountTypeSelect = ({
           </EuiText>
         </>
       )}
-      {selectedAccountType === AWS_SINGLE_ACCOUNT && (
+      {selectedAccountType === SINGLE_ACCOUNT && (
         <>
           <EuiSpacer size="l" />
           <EuiText color="subdued" size="s">

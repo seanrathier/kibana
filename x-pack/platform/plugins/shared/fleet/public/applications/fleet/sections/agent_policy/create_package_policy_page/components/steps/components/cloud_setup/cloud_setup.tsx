@@ -5,33 +5,52 @@
  * 2.0.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
 import { EuiSpacer } from '@elastic/eui';
 
-import { CloudProviderSelector } from './cloud_provider_selector';
-import { AwsAccountTypeSelect } from './aws_account_type_selector';
-import type { ProviderType } from './types';
+import type { NewPackagePolicy, PackageInfo } from '../../../../../../../../../../common/types';
 
-interface CloudProviderStreamInput {
-  aws: string;
-  gcp: string;
-  azure: string;
-}
+import { CloudProviderSelector } from './cloud_provider_selector';
+import { AwsAccountTypeSelect } from './aws/aws_account_type_selector';
+import type { AccountTypes, ProviderType } from './types';
+import { AwsCredentials } from './aws';
+import { useAws } from './aws/use_aws';
 
 interface CloudSetupProps {
-  selectedStream?: ProviderType;
-  cloudProviderStreamInput: CloudProviderStreamInput;
+  packagePolicy: NewPackagePolicy;
+  updatePackagePolicy: (fields: Partial<NewPackagePolicy>) => void;
+  packageInfo: PackageInfo;
+  integrationType: string;
   isEditPage: boolean;
+  isAgentlessSelected?: boolean;
+  cloudSetupConfig: CloudSetupConfig;
+}
+
+interface CloudSetupConfig {
+  aws: {
+    documentLink: string;
+  };
+  gcp: {
+    documentLink: string;
+  };
+  azure: {
+    documentLink: string;
+  };
 }
 
 export const CloudSetup = ({
-  selectedStream,
-  cloudProviderStreamInput,
+  packagePolicy,
+  updatePackagePolicy,
+  packageInfo,
+  integrationType,
   isEditPage = false,
+  isAgentlessSelected = false,
+  cloudSetupConfig,
 }: CloudSetupProps) => {
   const [provider, setProvider] = useState<ProviderType>('aws');
-  const [accountType, setAccountType] = useState<string>('single-account');
+
+  const { awsCredentials, setAwsCredential } = useAws(provider);
 
   return (
     <>
@@ -43,17 +62,31 @@ export const CloudSetup = ({
       <EuiSpacer size="l" />
 
       {provider === 'aws' && (
-        <AwsAccountTypeSelect
-          // input={input}
-          // newPolicy={newPolicy}
-          // updatePolicy={updatePolicy}
-          // packageInfo={packageInfo}
-          disabled={isEditPage}
-          selectedAccountType={accountType}
-          onChangeAccountType={setAccountType}
-        />
-        <EuiSpacer size="l" />
-        <A
+        <>
+          <AwsAccountTypeSelect
+            disabled={isEditPage}
+            selectedAccountType={awsCredentials.vars.accountType}
+            onChangeAccountType={(accountType: AccountTypes) => {
+              setAwsCredential({
+                ...awsCredentials,
+                vars: {
+                  ...awsCredentials.vars,
+                  accountType,
+                },
+              });
+            }}
+          />
+          <EuiSpacer size="l" />
+          <AwsCredentials
+            packageInfo={packageInfo}
+            integrationType={integrationType}
+            isEditPage={isEditPage}
+            isAgentless={isAgentlessSelected}
+            credentials={awsCredentials}
+            onChangeCredentials={setAwsCredential}
+            documentLink={cloudSetupConfig.aws.documentLink}
+          />
+        </>
       )}
 
       {/* {provider === 'gcp' && (

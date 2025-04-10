@@ -5,4 +5,6 @@
  * 2.0.
  */
 
+export type AccountTypes = 'organization-account' | 'single-account';
+
 export type ProviderType = 'aws' | 'gcp' | 'azure';

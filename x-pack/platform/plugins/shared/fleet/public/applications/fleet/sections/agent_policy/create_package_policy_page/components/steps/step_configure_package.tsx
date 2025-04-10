@@ -31,6 +31,7 @@ import { AGENTLESS_DISABLED_INPUTS } from '../../../../../../../../common/consta
 
 import { PackagePolicyInputPanel } from './components';
 import { CloudSetup } from './components/cloud_setup/cloud_setup';
+import { is } from 'immer/dist/internal';
 
 export const StepConfigurePackagePolicy: React.FunctionComponent<{
   packageInfo: PackageInfo;
@@ -63,13 +64,33 @@ export const StepConfigurePackagePolicy: React.FunctionComponent<{
         : packageInfo.policy_templates || [],
     [packageInfo.policy_templates, showOnlyIntegration]
   );
+
+  const cloudSetupConfig = {
+    aws: {
+      documentLink: `https://www.elastic.co/guide/en/security/current/cspm-get-started.html`,
+    },
+    gcp: {
+      documentLink: `https://www.elastic.co/guide/en/security/current/cspm-get-started-gcp.html`,
+    },
+    azure: {
+      documentLink: `https://www.elastic.co/guide/en/security/current/cspm-get-started-azure.html`,
+    },
+  };
   // Configure inputs (and their streams)
   const renderConfigureInputs = () =>
     packagePolicyTemplates.length ? (
       <>
         {!noTopRule && <EuiHorizontalRule margin="m" />}
         <EuiFlexGroup direction="column" gutterSize="none">
-          <CloudSetup cloudProviderStreamInput={undefined} isEditPage={false} />
+          <CloudSetup
+            packagePolicy={packagePolicy}
+            updatePackagePolicy={updatePackagePolicy}
+            packageInfo={packageInfo}
+            integrationType="asset_inventory"
+            isAgentlessSelected={isAgentlessSelected}
+            isEditPage={false}
+            cloudSetupConfig={cloudSetupConfig}
+          />
           {/* {packagePolicyTemplates.map((policyTemplate) => {
             const inputs = getNormalizedInputs(policyTemplate);
             const packagePolicyInputs = packagePolicy.inputs;

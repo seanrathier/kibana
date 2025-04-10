@@ -11,7 +11,8 @@
     // have to declare *.json explicitly due to https://github.com/microsoft/TypeScript/issues/25636
     "server/**/*.json",
     "public/**/*.json",
-    "../../../../../typings/**/*"
+    "../../../../../typings/**/*",
+    "../../../../platform/plugins/shared/fleet/public/applications/fleet/sections/agent_policy/create_package_policy_page/components/steps/components/cloud_setup/aws/aws_input_var_fields.tsx"
   ],
   "kbn_references": [
     "@kbn/core",
@@ -66,7 +67,7 @@
     "@kbn/cloud-security-posture",
     "@kbn/analytics",
     "@kbn/management-settings-ids",
-    "@kbn/expandable-flyout",
+    "@kbn/expandable-flyout"
   ],
   "exclude": ["target/**/*"]
 }

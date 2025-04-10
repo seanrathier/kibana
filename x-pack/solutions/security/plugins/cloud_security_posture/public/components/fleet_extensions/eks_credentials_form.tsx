@@ -12,7 +12,7 @@ import { FormattedMessage } from '@kbn/i18n-react';
 import { i18n } from '@kbn/i18n';
 import { RadioGroup } from './csp_boxed_radio_group';
 import { getPosturePolicy, NewPackagePolicyPostureInput } from './utils';
-import { AwsInputVarFields } from './aws_credentials_form/aws_input_var_fields';
+import { AwsInputVarFields } from '../../../../../../../platform/plugins/shared/fleet/public/applications/fleet/sections/agent_policy/create_package_policy_page/components/steps/components/cloud_setup/aws/aws_input_var_fields';
 
 const AWSSetupInfoContent = () => (
   <>
