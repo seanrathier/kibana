@@ -67,6 +67,8 @@ export const StepConfigurePackagePolicy: React.FunctionComponent<{
 
   const cloudSetupConfig = {
     aws: {
+      inputType: 'cloudbeat/asset_inventory_aws',
+      dataStream: 'cloud_asset_inventory.asset_inventory',
       documentLink: `https://www.elastic.co/guide/en/security/current/cspm-get-started.html`,
     },
     gcp: {

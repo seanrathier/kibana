@@ -8,3 +8,17 @@
 export type AccountTypes = 'organization-account' | 'single-account';
 
 export type ProviderType = 'aws' | 'gcp' | 'azure';
+
+export interface CloudSetupConfig {
+  aws: {
+    documentLink: string;
+    inputType: string;
+    dataStream: string;
+  };
+  gcp: {
+    documentLink: string;
+  };
+  azure: {
+    documentLink: string;
+  };
+}

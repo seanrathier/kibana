@@ -259,7 +259,7 @@ export const AwsCredentialsForm = ({
       {setupFormat === AWS_SETUP_FORMAT.CLOUD_FORMATION && (
         <CloudFormationSetup
           hasCloudFormationTemplate={hasCloudFormationTemplate}
-          accountType={credentials.vars.accountType}
+          accountType={credentials.vars['aws.account_type']}
         />
       )}
       {setupFormat === AWS_SETUP_FORMAT.MANUAL && (
@@ -269,11 +269,11 @@ export const AwsCredentialsForm = ({
               defaultMessage: 'Preferred manual method',
             })}
             options={getAwsCredentialsFormManualOptions()}
-            type={credentials.vars.credentialType}
+            type={credentials.vars['aws.credentials.type']}
             onChange={(optionId) => {
               onChange({
                 vars: {
-                  credentialType: optionId,
+                  'aws.credentials.type': optionId,
                 },
               } as Partial<AwsFormCredentials>);
             }}

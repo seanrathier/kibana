@@ -10,6 +10,8 @@ import { EuiFieldText, EuiFormRow, EuiLoadingSpinner, EuiSpacer, EuiText } from 
 import { FormattedMessage } from '@kbn/i18n-react';
 import { i18n } from '@kbn/i18n';
 
+import { css } from '@emotion/react';
+
 import type { PackageInfo } from '../../../../../../../../../../../common';
 
 import { AWS_CREDENTIALS_TYPE } from '../constants';
@@ -18,7 +20,6 @@ import { fieldIsInvalid, findVariableDef } from '../utils';
 import { PackagePolicyInputVarField } from '../../package_policy_input_var_field';
 
 import type { AwsCredentialsType, AwsFormCredentials } from './types';
-import { css } from '@emotion/react';
 
 const AssumeRoleDescription = (
   <div>
@@ -254,7 +255,7 @@ export const AwsInputVarFields = ({
   hasInvalidRequiredVars?: boolean;
 }) => {
   const options = getAwsCredentialsFormOptions();
-  const group = options[credentials.vars.credentialType] as AwsOptionValue;
+  const group = options[credentials.vars['aws.credentials.type']] as AwsOptionValue;
   const fields = getVarsFields(credentials, group.fields);
   return (
     <div>

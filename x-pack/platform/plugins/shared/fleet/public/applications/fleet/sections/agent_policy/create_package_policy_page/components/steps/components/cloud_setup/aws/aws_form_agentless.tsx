@@ -193,18 +193,18 @@ export const AwsCredentialsFormAgentless = ({
   //     SUPPORTED_TEMPLATES_URL_FROM_PACKAGE_INFO_INPUT_VARS.CLOUD_FORMATION_CREDENTIALS
   //   )?.replace(TEMPLATE_URL_ACCOUNT_TYPE_ENV_VAR, accountType);
 
-  const isOrganization = credentials?.vars.accountType === ORGANIZATION_ACCOUNT;
+  const isOrganization = credentials?.vars['aws.account_type'] === ORGANIZATION_ACCOUNT;
 
   const automationCredentialTemplate = getTemplateUrlFromPackageInfo(
     packageInfo,
     integrationType,
     SUPPORTED_TEMPLATES_URL_FROM_PACKAGE_INFO_INPUT_VARS.CLOUD_FORMATION_CREDENTIALS
-  )?.replace(TEMPLATE_URL_ACCOUNT_TYPE_ENV_VAR, credentials.vars.accountType);
+  )?.replace(TEMPLATE_URL_ACCOUNT_TYPE_ENV_VAR, credentials.vars['aws.account_type']);
 
   const onChangeCredentialType = (credentialType: AwsCredentialsType) => {
     onChange({
       vars: {
-        credentialType,
+        'aws.credentials.type': credentialType,
       },
     } as Partial<AwsFormCredentials>); // TODO: Update this to the correct type
   };
@@ -234,12 +234,12 @@ export const AwsCredentialsFormAgentless = ({
         label={i18n.translate('xpack.csp.awsIntegration.awsCredentialTypeSelectorLabelAgentless', {
           defaultMessage: 'Preferred method',
         })}
-        type={credentials?.vars.credentialType ?? AWS_CREDENTIALS_TYPE.DIRECT_ACCESS_KEYS}
+        type={credentials?.vars['aws.credentials.type'] ?? AWS_CREDENTIALS_TYPE.DIRECT_ACCESS_KEYS}
         options={getAwsCredentialsFormAgentlessOptions()}
         onChange={onChangeCredentialType}
       />
       <EuiSpacer size="m" />
-      {credentials?.vars.credentialType === DEFAULT_AGENTLESS_AWS_CREDENTIALS_TYPE && (
+      {credentials?.vars['aws.credentials.type'] === DEFAULT_AGENTLESS_AWS_CREDENTIALS_TYPE && (
         <>
           <EuiCallOut color="warning">
             <FormattedMessage
@@ -250,7 +250,7 @@ export const AwsCredentialsFormAgentless = ({
           <EuiSpacer size="m" />
         </>
       )}
-      {credentials?.vars.credentialType === DEFAULT_AGENTLESS_AWS_CREDENTIALS_TYPE && (
+      {credentials?.vars['aws.credentials.type'] === DEFAULT_AGENTLESS_AWS_CREDENTIALS_TYPE && (
         <>
           <EuiSpacer size="m" />
           <EuiAccordion

@@ -36,14 +36,14 @@ export type AwsCredentialsTypeOptions = Array<{
 export interface AwsFormCredentials {
   enabled: boolean;
   vars: {
-    accountType: AccountTypes;
-    credentialType: AwsCredentialsType;
-    accessKeyId?: string;
-    secretAccessKey?: string;
-    sessionToken?: string;
-    sharedCredentialsFile?: string;
-    credentialProfileName?: string;
-    roleArn?: string;
+    'aws.account_type': AccountTypes;
+    'aws.credentials.type': AwsCredentialsType;
+    'aws.access_key_id'?: string;
+    'aws.secret_access_key'?: string;
+    'aws.session_token'?: string;
+    'aws.shared_credential_file'?: string;
+    'aws.credential_profile_name'?: string;
+    'aws.role_arn'?: string;
   };
 }
 export interface AwsFormProps {

@@ -13,7 +13,7 @@ import type { NewPackagePolicy, PackageInfo } from '../../../../../../../../../.
 
 import { CloudProviderSelector } from './cloud_provider_selector';
 import { AwsAccountTypeSelect } from './aws/aws_account_type_selector';
-import type { AccountTypes, ProviderType } from './types';
+import type { AccountTypes, ProviderType, CloudSetupConfig } from './types';
 import { AwsCredentials } from './aws';
 import { useAws } from './aws/use_aws';
 
@@ -27,18 +27,6 @@ interface CloudSetupProps {
   cloudSetupConfig: CloudSetupConfig;
 }
 
-interface CloudSetupConfig {
-  aws: {
-    documentLink: string;
-  };
-  gcp: {
-    documentLink: string;
-  };
-  azure: {
-    documentLink: string;
-  };
-}
-
 export const CloudSetup = ({
   packagePolicy,
   updatePackagePolicy,
@@ -49,8 +37,12 @@ export const CloudSetup = ({
   cloudSetupConfig,
 }: CloudSetupProps) => {
   const [provider, setProvider] = useState<ProviderType>('aws');
-
-  const { awsCredentials, setAwsCredential } = useAws(provider);
+  const { awsCredentials, setAwsCredential } = useAws(
+    provider,
+    cloudSetupConfig.aws,
+    packagePolicy,
+    updatePackagePolicy
+  );
 
   return (
     <>
@@ -65,13 +57,13 @@ export const CloudSetup = ({
         <>
           <AwsAccountTypeSelect
             disabled={isEditPage}
-            selectedAccountType={awsCredentials.vars.accountType}
+            selectedAccountType={awsCredentials.vars['aws.account_type']}
             onChangeAccountType={(accountType: AccountTypes) => {
               setAwsCredential({
                 ...awsCredentials,
                 vars: {
                   ...awsCredentials.vars,
-                  accountType,
+                  'aws.account_type': accountType,
                 },
               });
             }}
