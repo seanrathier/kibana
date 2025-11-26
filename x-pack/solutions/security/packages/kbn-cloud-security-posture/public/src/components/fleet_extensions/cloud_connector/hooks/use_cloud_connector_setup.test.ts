@@ -9,7 +9,12 @@ import { renderHook, act } from '@testing-library/react';
 
 import { useCloudConnectorSetup } from './use_cloud_connector_setup';
 
-import type { NewPackagePolicy, NewPackagePolicyInput } from '@kbn/fleet-plugin/common';
+import type {
+  NewPackagePolicy,
+  NewPackagePolicyInput,
+  NewPackagePolicyInputStream,
+  PackagePolicyConfigRecord,
+} from '@kbn/fleet-plugin/common';
 import type { UpdatePolicy } from '../../types';
 import type { CloudConnectorCredentials } from '../types';
 
@@ -93,18 +98,20 @@ describe('useCloudConnectorSetup', () => {
       return updatedVars;
     });
 
-    (updatePolicyInputs as jest.Mock).mockImplementation((policy, vars) => {
-      return {
-        ...mockPolicy,
-        inputs: mockPolicy.inputs.map((input) => ({
-          ...input,
-          streams: input.streams.map((stream) => ({
-            ...stream,
-            vars: { ...stream.vars, ...vars },
+    (updatePolicyInputs as jest.Mock).mockImplementation(
+      (policy: NewPackagePolicy, vars: PackagePolicyConfigRecord) => {
+        return {
+          ...policy,
+          inputs: policy.inputs.map((input: NewPackagePolicyInput) => ({
+            ...input,
+            streams: input.streams.map((stream: NewPackagePolicyInputStream) => ({
+              ...stream,
+              vars: { ...stream.vars, ...vars },
+            })),
           })),
-        })),
-      };
-    });
+        };
+      }
+    );
   });
 
   describe('updatePolicyWithNewCredentials', () => {

@@ -94,11 +94,14 @@ export default function (providerContext: FtrProviderContext) {
         const body = response.body;
 
         expect(body.item).to.have.property('id');
-        expect(body.item.name).to.equal('azure-connector-id-12345');
+        expect(body.item.name).to.equal('test-azure-connector');
         expect(body.item.cloudProvider).to.equal('azure');
         expect(body.item.vars).to.have.property('tenant_id');
         expect(body.item.vars).to.have.property('client_id');
         expect(body.item.vars).to.have.property('azure_credentials_cloud_connector_id');
+        expect(body.item.vars.azure_credentials_cloud_connector_id.value).to.equal(
+          'azure-connector-id-12345'
+        );
         expect(body.item.packagePolicyCount).to.equal(1);
         expect(body.item).to.have.property('created_at');
         expect(body.item).to.have.property('updated_at');
@@ -473,7 +476,7 @@ export default function (providerContext: FtrProviderContext) {
           .expect(200);
 
         expect(body.item).to.have.property('id');
-        expect(body.item.name).to.equal('azure-connector-valid-id');
+        expect(body.item.name).to.equal('test-azure-connector-valid');
         expect(body.item.vars.tenant_id.value).to.have.property('id', 'validTenantId1234567');
         expect(body.item.vars.client_id.value).to.have.property('id', 'validClientId1234567');
         expect(body.item.vars.azure_credentials_cloud_connector_id.value).to.equal(
@@ -487,6 +490,21 @@ export default function (providerContext: FtrProviderContext) {
       let createdAzureConnectorId: string;
 
       before(async () => {
+        // Clean up any existing connectors with the same names to avoid conflicts
+        const existingConnectors = await supertest.get(`/api/fleet/cloud_connectors`);
+        if (existingConnectors.body?.items) {
+          for (const connector of existingConnectors.body.items) {
+            if (
+              connector.name === 'test-get-connector' ||
+              connector.name === 'test-get-azure-connector'
+            ) {
+              await supertest
+                .delete(`/api/fleet/cloud_connectors/${connector.id}?force=true`)
+                .set('kbn-xsrf', 'xxxx');
+            }
+          }
+        }
+
         // Create an AWS test connector for GET tests
         const awsResponse = await supertest
           .post(`/api/fleet/cloud_connectors`)
@@ -540,6 +558,20 @@ export default function (providerContext: FtrProviderContext) {
         createdAzureConnectorId = azureResponse.body.item.id;
       });
 
+      after(async () => {
+        // Clean up created connectors
+        if (createdAwsConnectorId) {
+          await supertest
+            .delete(`/api/fleet/cloud_connectors/${createdAwsConnectorId}?force=true`)
+            .set('kbn-xsrf', 'xxxx');
+        }
+        if (createdAzureConnectorId) {
+          await supertest
+            .delete(`/api/fleet/cloud_connectors/${createdAzureConnectorId}?force=true`)
+            .set('kbn-xsrf', 'xxxx');
+        }
+      });
+
       it('should get list of cloud connectors including AWS', async () => {
         const { body } = await supertest.get(`/api/fleet/cloud_connectors`).expect(200);
 
@@ -548,7 +580,7 @@ export default function (providerContext: FtrProviderContext) {
 
         const connector = body.items.find((c: any) => c.id === createdAwsConnectorId);
         expect(connector).to.be.an('object');
-        expect(connector.name).to.equal('arn:aws:iam::123456789012:role/test-role');
+        expect(connector.name).to.equal('test-get-connector');
         expect(connector.cloudProvider).to.equal('aws');
         expect(connector.vars).to.have.property('role_arn');
         expect(connector.vars).to.have.property('external_id');
@@ -565,7 +597,7 @@ export default function (providerContext: FtrProviderContext) {
 
         const connector = body.items.find((c: any) => c.id === createdAzureConnectorId);
         expect(connector).to.be.an('object');
-        expect(connector.name).to.equal('test-get-azure-id');
+        expect(connector.name).to.equal('test-get-azure-connector');
         expect(connector.cloudProvider).to.equal('azure');
         expect(connector.vars).to.have.property('tenant_id');
         expect(connector.vars).to.have.property('client_id');
@@ -901,7 +933,7 @@ export default function (providerContext: FtrProviderContext) {
           .expect(200);
 
         expect(body.item).to.have.property('id', createdAzureConnectorId);
-        expect(body.item).to.have.property('name', 'azure-get-by-id-12345');
+        expect(body.item).to.have.property('name', 'test-azure-get-by-id');
         expect(body.item).to.have.property('cloudProvider', 'azure');
         expect(body.item).to.have.property('packagePolicyCount', 1);
         expect(body.item).to.have.property('created_at');
@@ -1122,7 +1154,7 @@ export default function (providerContext: FtrProviderContext) {
           .expect(200);
 
         expect(body.item).to.have.property('id', createdAzureConnectorId);
-        expect(body.item).to.have.property('name', 'original-azure-id-12345');
+        expect(body.item).to.have.property('name', 'test-update-azure-connector');
         expect(body.item).to.have.property('cloudProvider', 'azure');
         expect(body.item).to.have.property('packagePolicyCount', 1);
         expect(body.item).to.have.property('updated_at');
