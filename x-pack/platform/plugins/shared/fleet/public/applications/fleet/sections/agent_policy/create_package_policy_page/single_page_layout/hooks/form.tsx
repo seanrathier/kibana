@@ -152,6 +152,50 @@ export const createAgentPolicyIfNeeded = async ({
   }
 };
 
+// TODO: This is temporary name generation logic.
+// Will be replaced when https://github.com/elastic/security-team/issues/14283 is completed
+// and users can provide custom cloud connector names via the UI
+function generateCloudConnectorName(
+  pkgPolicy: CreatePackagePolicyRequest['body']
+): string | undefined {
+  // Find the enabled input stream with vars
+  const enabledInput = pkgPolicy.inputs?.find((input) => input.enabled !== false);
+  const vars = enabledInput?.streams?.[0]?.vars;
+
+  if (!vars) {
+    return undefined;
+  }
+
+  // Determine cloud provider from enabled input type
+  const cloudProvider = enabledInput?.type?.match(/aws|azure|gcp/)?.[0] as
+    | CloudProvider
+    | undefined;
+
+  // Extract name based on cloud provider
+  if (cloudProvider === 'aws') {
+    // For AWS, use role_arn if available
+    const roleArn = vars.role_arn?.value || vars['aws.credentials.role_arn']?.value;
+    if (roleArn) {
+      return roleArn;
+    }
+  } else if (cloudProvider === 'azure') {
+    // For Azure, use azure_credentials_cloud_connector_id if available
+    const managedIdentity =
+      vars.azure_credentials_cloud_connector_id?.value ||
+      vars['azure.credentials.cloud_connector_id']?.value;
+    if (managedIdentity) {
+      return managedIdentity;
+    }
+  }
+
+  // Fallback: generate default name with cloud provider prefix
+  if (cloudProvider && pkgPolicy.name) {
+    return `${cloudProvider}-cloud-connector: ${pkgPolicy.name}`;
+  }
+
+  return undefined;
+}
+
 async function savePackagePolicy(pkgPolicy: CreatePackagePolicyRequest['body']) {
   const { policy, forceCreateNeeded } = await prepareInputPackagePolicyDataset(pkgPolicy);
 
@@ -684,7 +728,7 @@ export function useOnSubmit({
           : false;
 
         // Check if agentless is configured in ESS and Serverless until Agentless API migrates to Serverless
-        const isAgentlessConfigured = isAgentlessAgentPolicy(createdPolicy);
+        const isAgentlessConfigured = isAgentlessAgentPolicy(createdPolicy || data?.item);
 
         // Removing this code will disabled the Save and Continue button. We need code below update form state and trigger correct modal depending on agent count
         if (hasFleetAddAgentsPrivileges && !isAgentlessConfigured && !skipConfirmModal) {
