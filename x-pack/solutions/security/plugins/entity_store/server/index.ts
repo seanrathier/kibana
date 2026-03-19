@@ -7,14 +7,11 @@
 
 import type { PluginInitializerContext } from '@kbn/core-plugins-server';
 
-export type {
-  EntityStoreSetupContract,
-  EntityStoreStartContract,
-  EntityStoreCRUDClient,
-} from './types';
-export type { RegisterEntityMaintainerConfig } from './tasks/entity_maintainers/types';
-export type { EntityUpdateClient, BulkObject, BulkObjectResponse } from './domain/crud';
+export type { EntityStoreStartContract, EntityStoreCRUDClient } from './types';
+export type { EntityStoreSetupContract } from './types';
+export type { BulkObject, BulkObjectResponse } from './domain/crud';
 export { getLatestEntitiesIndexName } from '../common';
+export type { RegisterEntityMaintainerConfig } from './tasks/entity_maintainers/types';
 export { getHistorySnapshotIndexPattern } from './domain/asset_manager/history_snapshot_index';
 
 export async function plugin(initializerContext: PluginInitializerContext) {

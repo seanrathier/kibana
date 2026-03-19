@@ -78,8 +78,18 @@ export function buildExtractionSourceClause(params: {
   );
 }
 
+/**
+ * ESQL does not support nested fields — referencing one causes a verification_exception.
+ * Fields like `entity.relationships.communicates_with` and `entity.relationships.accesses_frequently` use a nested mapping (array of
+ * objects with an `euid` key) and must be excluded from ESQL aggregation, merge, and
+ * keep clauses. Their data is written to the updates data stream and merged into the
+ * latest index by a dedicated mechanism outside the ESQL extraction pipeline.
+ */
+const isEsqlCompatible = (field: EntityField): boolean => field.mapping?.type !== 'nested';
+
 export function aggregationStats(fields: EntityField[], renameToRecent: boolean = true): string {
   return fields
+    .filter(isEsqlCompatible)
     .map((field) => {
       const { retention, destination: dest, source } = field;
       const finalDest = renameToRecent ? recentData(dest) : dest;
@@ -100,6 +110,7 @@ export function aggregationStats(fields: EntityField[], renameToRecent: boolean 
 
 export function fieldsToKeep(definitionFields: EntityField[], defaultFields: string[]): string {
   const allFieldPatterns = definitionFields
+    .filter(isEsqlCompatible)
     .map(({ destination }) => destination)
     .concat(defaultFields)
     .map((field) => {

@@ -1,0 +1,170 @@
+/*
+ * Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+ * or more contributor license agreements. Licensed under the Elastic License
+ * 2.0; you may not use this file except in compliance with the Elastic License
+ * 2.0.
+ */
+
+import type { ElasticsearchClient } from '@kbn/core/server';
+import type { Logger } from '@kbn/logging';
+import type { EntityStoreCRUDClient } from '@kbn/entity-store/server';
+
+import { LOOKBACK_WINDOW, COMPOSITE_PAGE_SIZE, MAX_ITERATIONS } from './constants';
+import type { CompositeAfterKey, CompositeBucket, ProcessedEntityRecord } from './types';
+import { INTEGRATION_CONFIGS, type CommunicatesWithIntegrationConfig } from './integrations';
+import { postprocessEsqlResults } from './postprocess_records';
+import { upsertEntityRelationships } from './upsert_entities';
+
+interface CompositeAggregations {
+  users: {
+    buckets: CompositeBucket[];
+    after_key?: CompositeAfterKey;
+  };
+}
+
+interface EsqlQueryResult {
+  columns: Array<{ name: string; type: string }>;
+  values: unknown[][];
+}
+
+function isIndexNotFound(err: unknown): boolean {
+  const e = err as {
+    meta?: { body?: { error?: { type?: string } } };
+    body?: { error?: { type?: string } };
+  };
+  return (e?.meta?.body?.error?.type ?? e?.body?.error?.type) === 'index_not_found_exception';
+}
+
+function errMsg(err: unknown): string {
+  return err instanceof Error ? err.message : JSON.stringify(err);
+}
+
+/**
+ * Computes `communicates_with` relationships for user entities by analysing
+ * cloud API and MDM activity events across configured integrations.
+ *
+ * For each integration the flow is:
+ *
+ * 1. **Discover users** — A paginated composite aggregation scans the
+ *    integration's index for events within the lookback window and returns
+ *    unique user-identity buckets (up to COMPOSITE_PAGE_SIZE per page).
+ *    Both success and failure outcomes are included.
+ *
+ * 2. **Compute relationships** — An ES|QL query, scoped to the users from
+ *    step 1 via a DSL filter, collects the unique target entities each user
+ *    communicated with. Targets are stored as EUIDs (e.g. "service:s3.amazonaws.com").
+ *
+ * 3. **Upsert relationships** — After all integrations and pages have been
+ *    processed, the accumulated records are written to the entity store's
+ *    updates data stream so the extraction pipeline can merge them into the
+ *    latest entities index.
+ */
+export async function runMaintainer({
+  esClient,
+  logger,
+  namespace,
+  crudClient,
+  integrations = INTEGRATION_CONFIGS,
+}: {
+  esClient: ElasticsearchClient;
+  logger: Logger;
+  namespace: string;
+  crudClient: EntityStoreCRUDClient;
+  integrations?: CommunicatesWithIntegrationConfig[];
+}) {
+  let totalBuckets = 0;
+  let totalCommunicationRecords = 0;
+  let totalUpserted = 0;
+  const allRecords: ProcessedEntityRecord[] = [];
+
+  for (const integration of integrations) {
+    logger.info(`[${integration.id}] Processing integration: ${integration.name}`);
+
+    let afterKey: CompositeAfterKey | undefined;
+    let iterations = 0;
+
+    do {
+      iterations++;
+      if (iterations > MAX_ITERATIONS) {
+        logger.warn(
+          `[${integration.id}] Reached MAX_ITERATIONS (${MAX_ITERATIONS}), stopping pagination`
+        );
+        break;
+      }
+      logger.info(
+        `[${integration.id}] Running composite aggregation (afterKey: ${JSON.stringify(
+          afterKey ?? 'none'
+        )})`
+      );
+
+      let aggResult;
+      try {
+        aggResult = await esClient.search({
+          index: integration.getIndexPattern(namespace),
+          ...integration.buildCompositeAggQuery(afterKey),
+        });
+      } catch (err) {
+        if (isIndexNotFound(err)) {
+          const idx = integration.getIndexPattern(namespace);
+          logger.info(`[${integration.id}] Index "${idx}" not found, skipping`);
+          break;
+        }
+        logger.error(`[${integration.id}] Composite aggregation failed: ${errMsg(err)}`);
+        throw err;
+      }
+
+      const aggs = aggResult.aggregations as CompositeAggregations | undefined;
+      const buckets: CompositeBucket[] = aggs?.users?.buckets ?? [];
+      const newAfterKey: CompositeAfterKey | undefined = aggs?.users?.after_key;
+
+      logger.info(`[${integration.id}] Found ${buckets.length} user buckets`);
+      totalBuckets += buckets.length;
+
+      if (buckets.length === 0) break;
+
+      const bucketFilter = integration.buildBucketUserFilter(buckets);
+      const esqlFilter = {
+        bool: {
+          filter: [{ range: { '@timestamp': { gte: LOOKBACK_WINDOW, lt: 'now' } } }, bucketFilter],
+        },
+      };
+
+      const esqlQuery = integration.buildEsqlQuery(namespace);
+      logger.info(`[${integration.id}] Running ES|QL query:\n${esqlQuery}`);
+      logger.info(`[${integration.id}] Bucket user filter: ${JSON.stringify(bucketFilter)}`);
+
+      let esqlResult;
+      try {
+        esqlResult = await esClient.esql.query({ query: esqlQuery, filter: esqlFilter });
+      } catch (esqlErr) {
+        logger.error(`[${integration.id}] ES|QL query failed: ${errMsg(esqlErr)}`);
+        throw esqlErr;
+      }
+
+      const { columns, values } = esqlResult as unknown as EsqlQueryResult;
+
+      if (columns && values) {
+        const records = postprocessEsqlResults(columns, values);
+        totalCommunicationRecords += records.length;
+        allRecords.push(...records);
+
+        for (const record of records) {
+          const targets =
+            record.communicates_with.length > 0 ? record.communicates_with.join(', ') : 'none';
+          logger.debug(`[${integration.id}] Entity ${record.entityId}: targets=[${targets}]`);
+        }
+      }
+
+      afterKey = buckets.length < COMPOSITE_PAGE_SIZE ? undefined : newAfterKey;
+    } while (afterKey);
+  }
+
+  totalUpserted = await upsertEntityRelationships(crudClient, logger, allRecords);
+
+  return {
+    totalBuckets,
+    totalCommunicationRecords,
+    totalUpserted,
+    lastRunTimestamp: new Date().toISOString(),
+  };
+}

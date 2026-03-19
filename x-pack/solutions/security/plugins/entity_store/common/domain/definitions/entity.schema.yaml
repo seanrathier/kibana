@@ -82,7 +82,13 @@ components:
             communicates_with:
               type: array
               items:
-                type: string
+                type: object
+                additionalProperties: false
+                required:
+                  - euid
+                properties:
+                  euid:
+                    type: string
             depends_on:
               type: array
               items:
