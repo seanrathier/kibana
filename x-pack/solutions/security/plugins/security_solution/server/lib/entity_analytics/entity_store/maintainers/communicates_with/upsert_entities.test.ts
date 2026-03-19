@@ -42,7 +42,10 @@ describe('communicates_with upsertEntityRelationships', () => {
 
   it('returns 0 without calling the API when all records have empty communicates_with', async () => {
     const crudClient = createCrudClient();
-    const records = [createRecord({ communicates_with: [] }), createRecord({ communicates_with: [] })];
+    const records = [
+      createRecord({ communicates_with: [] }),
+      createRecord({ communicates_with: [] }),
+    ];
     const result = await upsertEntityRelationships(crudClient, logger, records);
     expect(result).toBe(0);
     expect(crudClient.upsertEntitiesBulk).not.toHaveBeenCalled();
