@@ -47,6 +47,7 @@ export async function mergeNestedFieldsFromUpdates({
 
   const { type } = entityDefinition;
   const euidSourceField = getEuidSourceField(type);
+  const typePrefix = entityDefinition.identityField.skipTypePrepend ? undefined : type;
 
   let totalMerged = 0;
 
@@ -58,6 +59,7 @@ export async function mergeNestedFieldsFromUpdates({
       updatesDataStream,
       latestIndex,
       euidSourceField,
+      typePrefix,
       fromDateISO,
       toDateISO,
       abortSignal,
@@ -131,6 +133,8 @@ interface MergeOneFieldParams {
   updatesDataStream: string;
   latestIndex: string;
   euidSourceField: string;
+  /** When set, prepended to the raw EUID before hashing to match the latest index _id format (e.g. "user"). */
+  typePrefix: string | undefined;
   fromDateISO: string;
   toDateISO: string;
   abortSignal?: AbortSignal;
@@ -143,6 +147,7 @@ async function mergeOneNestedField({
   updatesDataStream,
   latestIndex,
   euidSourceField,
+  typePrefix,
   fromDateISO,
   toDateISO,
   abortSignal,
@@ -180,8 +185,10 @@ async function mergeOneNestedField({
     const source = hit._source;
     if (!source) continue;
 
-    const euid = getNestedValue(source, euidSourceField) as string;
-    if (!euid) continue;
+    const rawEuid = getNestedValue(source, euidSourceField) as string;
+    if (!rawEuid) continue;
+
+    const euid = typePrefix ? `${typePrefix}:${rawEuid}` : rawEuid;
 
     const nestedData = getNestedValue(source, sourcePath) as Array<Record<string, unknown>>;
     if (!nestedData || !Array.isArray(nestedData)) continue;

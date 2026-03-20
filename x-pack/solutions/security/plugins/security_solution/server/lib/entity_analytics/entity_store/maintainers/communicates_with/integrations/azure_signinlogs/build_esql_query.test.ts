@@ -18,6 +18,30 @@ describe('communicates_with Azure Sign-in Logs buildEsqlQuery', () => {
     expect(query).toContain('azure.signinlogs.properties.app_display_name IS NOT NULL');
   });
 
+  it('requires at least one of user.email, user.id, or user.name', () => {
+    const query = buildEsqlQuery('default');
+    expect(query).toContain(
+      'user.email IS NOT NULL OR user.id IS NOT NULL OR user.name IS NOT NULL'
+    );
+  });
+
+  it('hardcodes entity.namespace to "entra_id"', () => {
+    const query = buildEsqlQuery('default');
+    expect(query).toContain('entity.namespace = "entra_id"');
+  });
+
+  it('builds actorUserId from user.email, user.id, or user.name with @entra_id suffix', () => {
+    const query = buildEsqlQuery('default');
+    expect(query).toContain('CONCAT(user.email, "@", entity.namespace)');
+    expect(query).toContain('CONCAT(user.id, "@", entity.namespace)');
+    expect(query).toContain('CONCAT(user.name, "@", entity.namespace)');
+  });
+
+  it('does NOT reference user.domain (unmapped in Azure Sign-in Logs)', () => {
+    const query = buildEsqlQuery('default');
+    expect(query).not.toMatch(/\buser\.domain\b/);
+  });
+
   it('constructs target EUID as service: + app_display_name', () => {
     const query = buildEsqlQuery('default');
     expect(query).toContain('CONCAT("service:", azure.signinlogs.properties.app_display_name)');
@@ -30,9 +54,6 @@ describe('communicates_with Azure Sign-in Logs buildEsqlQuery', () => {
   });
 
   it('does not add an explicit success-only filter', () => {
-    // communicates_with includes both success and failure outcomes.
-    // The EUID infrastructure may reference event.outcome internally, but we
-    // never add event.outcome == "success".
     const query = buildEsqlQuery('default');
     expect(query).not.toContain('event.outcome == "success"');
   });
