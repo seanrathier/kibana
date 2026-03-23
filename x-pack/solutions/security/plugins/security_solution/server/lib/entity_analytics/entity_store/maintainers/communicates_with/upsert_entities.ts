@@ -26,7 +26,7 @@ export async function upsertEntityRelationships(
         entity: {
           id: r.entityId,
           relationships: {
-            communicates_with: r.communicates_with.map((euid) => ({ euid })),
+            communicates_with: r.communicates_with,
           },
         },
         ...(r.userId ? { user: { id: r.userId } } : {}),

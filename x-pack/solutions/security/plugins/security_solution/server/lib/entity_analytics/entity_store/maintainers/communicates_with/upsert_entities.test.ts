@@ -63,7 +63,7 @@ describe('communicates_with upsertEntityRelationships', () => {
     expect(objects[0].doc.entity.id).toBe('alice@acme');
   });
 
-  it('maps communicates_with strings to { euid } objects', async () => {
+  it('passes communicates_with strings directly', async () => {
     const crudClient = createCrudClient();
     const record = createRecord({
       communicates_with: ['service:s3.amazonaws.com', 'service:ec2.amazonaws.com'],
@@ -71,8 +71,8 @@ describe('communicates_with upsertEntityRelationships', () => {
     await upsertEntityRelationships(crudClient, logger, [record]);
     const { objects } = (crudClient.upsertEntitiesBulk as jest.Mock).mock.calls[0][0];
     expect(objects[0].doc.entity.relationships.communicates_with).toEqual([
-      { euid: 'service:s3.amazonaws.com' },
-      { euid: 'service:ec2.amazonaws.com' },
+      'service:s3.amazonaws.com',
+      'service:ec2.amazonaws.com',
     ]);
   });
 

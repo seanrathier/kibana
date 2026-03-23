@@ -72,7 +72,7 @@ export const EntityField = z
       .optional(),
     relationships: z
       .object({
-        communicates_with: z.array(z.object({ euid: z.string() }).strict()).optional(),
+        communicates_with: z.array(z.string()).optional(),
         depends_on: z.array(z.string()).optional(),
         owns: z.array(z.string()).optional(),
         accesses_frequently: z.array(z.string()).optional(),

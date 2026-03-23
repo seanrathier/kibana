@@ -123,7 +123,7 @@ export const getEntityFieldsDescriptions = (rootField?: EntityType) => {
     collectValues({
       source: `${prefix}.relationships.communicates_with`,
       destination: 'entity.relationships.communicates_with',
-      mapping: { type: 'nested' },
+      mapping: { type: 'keyword' },
       fieldHistoryLength: 50,
       allowAPIUpdate: true,
     }),
