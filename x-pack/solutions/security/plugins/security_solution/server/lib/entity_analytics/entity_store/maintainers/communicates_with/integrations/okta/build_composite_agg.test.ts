@@ -5,6 +5,8 @@
  * 2.0.
  */
 
+import { isEventOutcomeTermFilter } from '../query_filter_test_utils';
+
 import { buildCompositeAggQuery } from './build_composite_agg';
 import { OKTA_AUTH_EVENT_ACTIONS } from './constants';
 
@@ -25,9 +27,8 @@ describe('communicates_with Okta buildCompositeAggQuery', () => {
 
   it('does not filter on event.outcome', () => {
     const query = buildCompositeAggQuery();
-    const filters = query.query.bool.filter;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const outcomeFilter = filters.find((f: any) => f.term?.['event.outcome']);
+    const filters = query.query.bool.filter as unknown[];
+    const outcomeFilter = filters.find(isEventOutcomeTermFilter);
     expect(outcomeFilter).toBeUndefined();
   });
 

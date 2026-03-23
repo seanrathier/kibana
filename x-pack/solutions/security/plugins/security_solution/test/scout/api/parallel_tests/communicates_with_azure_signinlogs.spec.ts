@@ -10,18 +10,17 @@ import { expect } from '@kbn/scout-security/api';
 import {
   apiTest,
   COMMON_HEADERS,
-  ENTITY_STORE_ROUTES,
   ENTITY_STORE_TAGS,
   UPDATES_INDEX,
   triggerMaintainerRun,
   waitForCommunicatesWith,
   seedIntegrationData,
   cleanupIntegrationData,
-  cleanupEntityIndices,
-  OKTA_CONFIG,
+  installEntityStore,
+  AZURE_SIGNINLOGS_CONFIG,
 } from '../fixtures';
 
-const config = OKTA_CONFIG;
+const config = AZURE_SIGNINLOGS_CONFIG;
 
 apiTest.describe(`communicates_with — ${config.name}`, { tag: ENTITY_STORE_TAGS }, () => {
   let defaultHeaders: Record<string, string>;
@@ -30,42 +29,12 @@ apiTest.describe(`communicates_with — ${config.name}`, { tag: ENTITY_STORE_TAG
     const credentials = await samlAuth.asInteractiveUser('admin');
     defaultHeaders = { ...credentials.cookieHeader, ...COMMON_HEADERS };
 
-    await kbnClient.uiSettings.update({ 'securitySolution:entityStoreEnableV2': true });
-
-    await apiClient
-      .post(ENTITY_STORE_ROUTES.UNINSTALL, {
-        headers: defaultHeaders,
-        responseType: 'json',
-        body: {},
-      })
-      .catch(() => {});
-
-    const installResponse = await apiClient.post(ENTITY_STORE_ROUTES.INSTALL, {
-      headers: defaultHeaders,
-      responseType: 'json',
-      body: {},
-    });
-    expect([200, 201]).toContain(installResponse.statusCode);
-
-    const initResponse = await apiClient.post(ENTITY_STORE_ROUTES.ENTITY_MAINTAINERS_INIT, {
-      headers: defaultHeaders,
-      responseType: 'json',
-      body: {},
-    });
-    expect([200, 201]).toContain(initResponse.statusCode);
-
-    await cleanupEntityIndices(esClient);
+    await installEntityStore(apiClient, defaultHeaders, kbnClient);
     await seedIntegrationData(esClient, config);
   });
 
-  apiTest.afterAll(async ({ esClient, apiClient }) => {
+  apiTest.afterAll(async ({ esClient }) => {
     await cleanupIntegrationData(esClient, config);
-    await cleanupEntityIndices(esClient);
-    await apiClient.post(ENTITY_STORE_ROUTES.UNINSTALL, {
-      headers: defaultHeaders,
-      responseType: 'json',
-      body: {},
-    });
   });
 
   apiTest('single communicates_with — updates index', async ({ apiClient, esClient }) => {
@@ -80,7 +49,9 @@ apiTest.describe(`communicates_with — ${config.name}`, { tag: ENTITY_STORE_TAG
     expect(entity).toBeDefined();
   });
 
-  apiTest('multiple communicates_with — updates index', async ({ esClient }) => {
+  apiTest('multiple communicates_with — updates index', async ({ apiClient, esClient }) => {
+    await triggerMaintainerRun(apiClient, defaultHeaders);
+
     const entity = await waitForCommunicatesWith(
       esClient,
       UPDATES_INDEX,

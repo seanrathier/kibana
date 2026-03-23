@@ -22,6 +22,7 @@ interface CompositeAggregations {
   };
 }
 
+/** Shape of `esClient.esql.query` JSON until the ES client types expose it. */
 interface EsqlQueryResult {
   columns: Array<{ name: string; type: string }>;
   values: unknown[][];
@@ -130,8 +131,11 @@ export async function runMaintainer({
       };
 
       const esqlQuery = integration.buildEsqlQuery(namespace);
-      logger.info(`[${integration.id}] Running ES|QL query:\n${esqlQuery}`);
-      logger.info(`[${integration.id}] Bucket user filter: ${JSON.stringify(bucketFilter)}`);
+      logger.info(
+        `[${integration.id}] Running ES|QL query for ${buckets.length} user buckets (${esqlQuery.length} chars)`
+      );
+      logger.debug(`[${integration.id}] ES|QL query:\n${esqlQuery}`);
+      logger.debug(`[${integration.id}] Bucket user filter: ${JSON.stringify(bucketFilter)}`);
 
       let esqlResult;
       try {

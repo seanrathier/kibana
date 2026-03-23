@@ -5,6 +5,11 @@
  * 2.0.
  */
 
+import {
+  findBoolFilterWithHostExistsInShould,
+  isEventOutcomeTermFilter,
+} from '../query_filter_test_utils';
+
 import { buildCompositeAggQuery } from './build_composite_agg';
 import { HUMAN_IAM_IDENTITY_TYPES } from './constants';
 
@@ -23,19 +28,15 @@ describe('communicates_with AWS CloudTrail buildCompositeAggQuery', () => {
 
   it('does not filter on event.outcome', () => {
     const query = buildCompositeAggQuery();
-    const filters = query.query.bool.filter;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const outcomeFilter = filters.find((f: any) => f.term?.['event.outcome']);
+    const filters = query.query.bool.filter as unknown[];
+    const outcomeFilter = filters.find(isEventOutcomeTermFilter);
     expect(outcomeFilter).toBeUndefined();
   });
 
   it('does not require host identity fields', () => {
     const query = buildCompositeAggQuery();
-    const filters = query.query.bool.filter;
-    const hostFilter = filters.find(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (f: any) => f.bool?.should?.some((s: any) => s.exists?.field?.startsWith('host.'))
-    );
+    const filters = query.query.bool.filter as unknown[];
+    const hostFilter = findBoolFilterWithHostExistsInShould(filters);
     expect(hostFilter).toBeUndefined();
   });
 

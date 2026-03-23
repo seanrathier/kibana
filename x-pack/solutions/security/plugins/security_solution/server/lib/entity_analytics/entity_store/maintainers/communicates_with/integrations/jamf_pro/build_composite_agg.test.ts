@@ -5,6 +5,12 @@
  * 2.0.
  */
 
+import {
+  findBoolFilterWithHostExistsInShould,
+  getBoolMinimumShouldMatch,
+  isEventOutcomeTermFilter,
+} from '../query_filter_test_utils';
+
 import { buildCompositeAggQuery } from './build_composite_agg';
 
 describe('communicates_with Jamf Pro buildCompositeAggQuery', () => {
@@ -15,25 +21,16 @@ describe('communicates_with Jamf Pro buildCompositeAggQuery', () => {
 
   it('requires at least one of host.name or host.id to exist', () => {
     const query = buildCompositeAggQuery();
-    const filters = query.query.bool.filter;
-    const hostFilter = filters.find(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (f: any) =>
-        f.bool?.should?.some(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (s: any) => s.exists?.field === 'host.name' || s.exists?.field === 'host.id'
-        )
-    );
+    const filters = query.query.bool.filter as unknown[];
+    const hostFilter = findBoolFilterWithHostExistsInShould(filters);
     expect(hostFilter).toBeDefined();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect((hostFilter as any).bool.minimum_should_match).toBe(1);
+    expect(getBoolMinimumShouldMatch(hostFilter)).toBe(1);
   });
 
   it('does not filter on event.outcome', () => {
     const query = buildCompositeAggQuery();
-    const filters = query.query.bool.filter;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const outcomeFilter = filters.find((f: any) => f.term?.['event.outcome']);
+    const filters = query.query.bool.filter as unknown[];
+    const outcomeFilter = filters.find(isEventOutcomeTermFilter);
     expect(outcomeFilter).toBeUndefined();
   });
 

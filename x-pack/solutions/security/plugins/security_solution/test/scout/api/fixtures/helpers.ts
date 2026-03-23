@@ -55,6 +55,10 @@ function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
 /**
  * Polls an index for an entity with the given ID and verifies it has the
  * expected communicates_with relationship targets.
+ *
+ * **Data shape:** Asserts `entity.relationships.communicates_with` (or nested under
+ * `user.entity`) is a **string array of EUIDs** (keyword field in the entity store).
+ * If the schema changes to structured objects, update normalization here.
  */
 export const waitForCommunicatesWith = async (
   esClient: EsClient,
@@ -147,6 +151,12 @@ export const cleanupDataStream = async (
   });
 };
 
+/**
+ * Deletes all documents in the default-space entity store updates and latest indices.
+ *
+ * **Only safe on disposable Elasticsearch clusters** used for Scout/API tests.
+ * Do not point these tests at a shared cluster you care about.
+ */
 export const cleanupEntityIndices = async (esClient: EsClient) => {
   await esClient.deleteByQuery({
     index: UPDATES_INDEX,
