@@ -218,7 +218,9 @@ describe('communicates_with runMaintainer', () => {
       const page1Records: ProcessedEntityRecord[] = [
         {
           entityId: 'user-0',
+          userEmail: null,
           userId: null,
+          userName: null,
           entityNamespace: null,
           communicates_with: ['service:s3.amazonaws.com'],
         },
@@ -226,7 +228,9 @@ describe('communicates_with runMaintainer', () => {
       const page2Records: ProcessedEntityRecord[] = [
         {
           entityId: 'user-last',
+          userEmail: null,
           userId: null,
+          userName: null,
           entityNamespace: null,
           communicates_with: ['service:Microsoft Teams'],
         },
@@ -301,7 +305,9 @@ describe('communicates_with runMaintainer', () => {
       const records1: ProcessedEntityRecord[] = [
         {
           entityId: 'user-a',
+          userEmail: null,
           userId: null,
+          userName: null,
           entityNamespace: null,
           communicates_with: ['service:s3.amazonaws.com'],
         },
@@ -309,7 +315,9 @@ describe('communicates_with runMaintainer', () => {
       const records2: ProcessedEntityRecord[] = [
         {
           entityId: 'user-b',
+          userEmail: null,
           userId: null,
+          userName: null,
           entityNamespace: null,
           communicates_with: ['host:JANE-MBP'],
         },
@@ -429,7 +437,9 @@ describe('communicates_with runMaintainer', () => {
       const records: ProcessedEntityRecord[] = [
         {
           entityId: 'user-1',
+          userEmail: null,
           userId: null,
+          userName: null,
           entityNamespace: null,
           communicates_with: ['service:s3.amazonaws.com'],
         },

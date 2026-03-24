@@ -20,19 +20,27 @@ export async function upsertEntityRelationships(
 
   const objects: BulkObject[] = records
     .filter((r) => r.communicates_with.length > 0)
-    .map((r) => ({
-      type: 'user' as const,
-      doc: {
-        entity: {
-          id: r.entityId,
-          relationships: {
-            communicates_with: r.communicates_with,
+    .map((r) => {
+      const userFields: Record<string, string> = {};
+      if (r.userEmail) userFields.email = r.userEmail;
+      if (r.userId) userFields.id = r.userId;
+      if (r.userName) userFields.name = r.userName;
+      const hasUserFields = Object.keys(userFields).length > 0;
+
+      return {
+        type: 'user' as const,
+        doc: {
+          entity: {
+            id: r.entityId,
+            relationships: {
+              communicates_with: r.communicates_with,
+            },
           },
-        },
-        ...(r.userId ? { user: { id: r.userId } } : {}),
-        ...(r.entityNamespace ? { event: { module: r.entityNamespace } } : {}),
-      } as Entity,
-    }));
+          ...(hasUserFields ? { user: userFields } : {}),
+          ...(r.entityNamespace ? { event: { module: r.entityNamespace } } : {}),
+        } as Entity,
+      };
+    });
 
   if (objects.length === 0) return 0;
 

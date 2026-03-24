@@ -58,6 +58,12 @@ describe('communicates_with Jamf Pro buildEsqlQuery', () => {
     expect(query).toContain('BY actorUserId');
   });
 
+  it('captures identity fields for EUID reconstruction in extraction pipeline', () => {
+    const query = buildEsqlQuery('default');
+    expect(query).toContain('_userEmail = MIN(user.email)');
+    expect(query).toContain('_userName = MIN(user.name)');
+  });
+
   it('does not add an explicit success-only filter', () => {
     const query = buildEsqlQuery('default');
     expect(query).not.toContain('event.outcome == "success"');

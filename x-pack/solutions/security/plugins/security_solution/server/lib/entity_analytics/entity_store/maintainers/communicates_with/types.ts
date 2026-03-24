@@ -16,7 +16,9 @@ export interface CompositeBucket {
 
 export interface ProcessedEntityRecord {
   entityId: string;
+  userEmail: string | null;
   userId: string | null;
+  userName: string | null;
   entityNamespace: string | null;
   /** Plain EUID strings (e.g. "service:s3.amazonaws.com"). Converted to { euid } objects at upsert time. */
   communicates_with: string[];

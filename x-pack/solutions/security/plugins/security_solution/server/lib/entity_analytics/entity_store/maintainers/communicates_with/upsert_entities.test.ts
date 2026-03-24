@@ -13,7 +13,9 @@ import type { ProcessedEntityRecord } from './types';
 function createRecord(overrides?: Partial<ProcessedEntityRecord>): ProcessedEntityRecord {
   return {
     entityId: 'alice@acme',
+    userEmail: 'alice@acme.com',
     userId: 'alice-user-id',
+    userName: 'Alice',
     entityNamespace: 'aws',
     communicates_with: ['service:s3.amazonaws.com'],
     ...overrides,
@@ -84,17 +86,33 @@ describe('communicates_with upsertEntityRelationships', () => {
     expect(objects[0].doc.entity.id).toBe('alice@acme');
   });
 
-  it('sets user.id to userId when userId is present', async () => {
+  it('includes all identity fields in user object', async () => {
     const crudClient = createCrudClient();
-    const record = createRecord({ userId: 'alice-user-id' });
+    const record = createRecord({
+      userEmail: 'alice@acme.com',
+      userId: 'alice-user-id',
+      userName: 'Alice',
+    });
     await upsertEntityRelationships(crudClient, logger, [record]);
     const { objects } = (crudClient.upsertEntitiesBulk as jest.Mock).mock.calls[0][0];
-    expect(objects[0].doc.user?.id).toBe('alice-user-id');
+    expect(objects[0].doc.user).toEqual({
+      email: 'alice@acme.com',
+      id: 'alice-user-id',
+      name: 'Alice',
+    });
   });
 
-  it('omits user field when userId is null', async () => {
+  it('includes only non-null identity fields in user object', async () => {
     const crudClient = createCrudClient();
-    const record = createRecord({ userId: null });
+    const record = createRecord({ userEmail: 'alice@acme.com', userId: null, userName: null });
+    await upsertEntityRelationships(crudClient, logger, [record]);
+    const { objects } = (crudClient.upsertEntitiesBulk as jest.Mock).mock.calls[0][0];
+    expect(objects[0].doc.user).toEqual({ email: 'alice@acme.com' });
+  });
+
+  it('omits user field when all identity fields are null', async () => {
+    const crudClient = createCrudClient();
+    const record = createRecord({ userEmail: null, userId: null, userName: null });
     await upsertEntityRelationships(crudClient, logger, [record]);
     const { objects } = (crudClient.upsertEntitiesBulk as jest.Mock).mock.calls[0][0];
     expect(objects[0].doc.user).toBeUndefined();

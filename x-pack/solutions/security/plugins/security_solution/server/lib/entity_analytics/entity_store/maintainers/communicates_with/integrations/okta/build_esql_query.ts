@@ -26,6 +26,6 @@ ${userFieldEvalsLine}| EVAL actorUserId = ${userIdEval}
 | MV_EXPAND okta.target.display_name
 | EVAL targetEntityId = CONCAT("service:", okta.target.display_name)
 | WHERE targetEntityId IS NOT NULL AND targetEntityId != "service:"
-| STATS communicates_with = VALUES(targetEntityId), _userId = MIN(user.id), _ns = MIN(entity.namespace) BY actorUserId
+| STATS communicates_with = VALUES(targetEntityId), _userEmail = MIN(user.email), _userId = MIN(user.id), _userName = MIN(user.name), _ns = MIN(entity.namespace) BY actorUserId
 | LIMIT ${COMPOSITE_PAGE_SIZE}`;
 }

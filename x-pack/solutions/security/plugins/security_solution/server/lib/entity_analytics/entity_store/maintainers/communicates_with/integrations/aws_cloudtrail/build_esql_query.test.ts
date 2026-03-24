@@ -39,6 +39,13 @@ describe('communicates_with AWS CloudTrail buildEsqlQuery', () => {
     expect(query).toContain('BY actorUserId');
   });
 
+  it('captures identity fields for EUID reconstruction in extraction pipeline', () => {
+    const query = buildEsqlQuery('default');
+    expect(query).toContain('_userEmail = MIN(user.email)');
+    expect(query).toContain('_userId = MIN(user.id)');
+    expect(query).toContain('_userName = MIN(user.name)');
+  });
+
   it('does not add an explicit success-only filter', () => {
     // communicates_with includes both success and failure outcomes.
     // The EUID infrastructure may reference event.outcome internally (to exclude

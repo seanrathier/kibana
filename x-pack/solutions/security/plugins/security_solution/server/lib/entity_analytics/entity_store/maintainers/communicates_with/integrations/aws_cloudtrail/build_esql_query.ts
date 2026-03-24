@@ -25,6 +25,6 @@ ${userFieldEvalsLine}| EVAL actorUserId = ${userIdEval}
 | WHERE actorUserId IS NOT NULL AND actorUserId != ""
 | EVAL targetEntityId = CONCAT("service:", event.provider)
 | WHERE targetEntityId IS NOT NULL AND targetEntityId != "service:"
-| STATS communicates_with = VALUES(targetEntityId), _userId = MIN(user.id), _ns = MIN(entity.namespace) BY actorUserId
+| STATS communicates_with = VALUES(targetEntityId), _userEmail = MIN(user.email), _userId = MIN(user.id), _userName = MIN(user.name), _ns = MIN(entity.namespace) BY actorUserId
 | LIMIT ${COMPOSITE_PAGE_SIZE}`;
 }
