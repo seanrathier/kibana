@@ -10,10 +10,10 @@ import { COMPOSITE_PAGE_SIZE } from '../../constants';
 import { getIndexPattern, OKTA_AUTH_EVENT_ACTIONS } from './constants';
 
 export function buildEsqlQuery(namespace: string): string {
-  const userFieldEvals = euid.getFieldEvaluationsEsql('user');
+  const userFieldEvals = euid.esql.getFieldEvaluations('user');
   const userFieldEvalsLine = userFieldEvals ? `| EVAL ${userFieldEvals}\n` : '';
-  const userIdEval = euid.getEuidEsqlEvaluation('user', { withTypeId: false });
-  const userIdFilter = euid.getEuidEsqlDocumentsContainsIdFilter('user');
+  const userIdEval = euid.esql.getEuidEvaluation('user', { withTypeId: false });
+  const userIdFilter = euid.esql.getEuidDocumentsContainsIdFilter('user');
 
   const actionsLiteral = OKTA_AUTH_EVENT_ACTIONS.map((a) => `"${a}"`).join(', ');
 

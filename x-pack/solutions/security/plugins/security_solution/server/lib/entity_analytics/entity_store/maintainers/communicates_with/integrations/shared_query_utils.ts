@@ -31,7 +31,7 @@ export function buildCompositeAggQueryBase(
         filter: [
           { range: { '@timestamp': { gte: LOOKBACK_WINDOW, lt: 'now' } } },
           ...integrationFilters,
-          euid.getEuidDslDocumentsContainsIdFilter('user'),
+          euid.dsl.getEuidDocumentsContainsIdFilter('user'),
         ],
       },
     },
