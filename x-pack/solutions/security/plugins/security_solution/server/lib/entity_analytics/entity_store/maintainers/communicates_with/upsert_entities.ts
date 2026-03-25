@@ -37,7 +37,9 @@ export async function upsertEntityRelationships(
             },
           },
           ...(hasUserFields ? { user: userFields } : {}),
-          ...(r.entityNamespace ? { event: { module: r.entityNamespace } } : {}),
+          ...(r.entityNamespace
+            ? { event: { module: r.entityNamespace, kind: 'asset' } }
+            : { event: { kind: 'asset' } }),
         } as Entity,
       };
     });

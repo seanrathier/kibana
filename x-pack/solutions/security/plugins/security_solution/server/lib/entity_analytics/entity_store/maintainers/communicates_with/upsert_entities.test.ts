@@ -118,20 +118,20 @@ describe('communicates_with upsertEntityRelationships', () => {
     expect(objects[0].doc.user).toBeUndefined();
   });
 
-  it('sets event.module to entityNamespace when present', async () => {
+  it('sets event.module and event.kind when entityNamespace is present', async () => {
     const crudClient = createCrudClient();
     const record = createRecord({ entityNamespace: 'azure' });
     await upsertEntityRelationships(crudClient, logger, [record]);
     const { objects } = (crudClient.upsertEntitiesBulk as jest.Mock).mock.calls[0][0];
-    expect(objects[0].doc.event?.module).toBe('azure');
+    expect(objects[0].doc.event).toEqual({ module: 'azure', kind: 'asset' });
   });
 
-  it('omits event field when entityNamespace is null', async () => {
+  it('sets event.kind even when entityNamespace is null', async () => {
     const crudClient = createCrudClient();
     const record = createRecord({ entityNamespace: null });
     await upsertEntityRelationships(crudClient, logger, [record]);
     const { objects } = (crudClient.upsertEntitiesBulk as jest.Mock).mock.calls[0][0];
-    expect(objects[0].doc.event).toBeUndefined();
+    expect(objects[0].doc.event).toEqual({ kind: 'asset' });
   });
 
   it('calls upsertEntitiesBulk with force: true', async () => {
