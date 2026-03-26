@@ -5,7 +5,8 @@
  * 2.0.
  */
 
-import { euid } from '@kbn/entity-store/common/euid_helpers';
+import { getFieldEvaluationsEsql } from '@kbn/entity-store/common/domain/euid';
+
 import { COMPOSITE_PAGE_SIZE } from '../../constants';
 import { getIndexPattern, HUMAN_IAM_IDENTITY_TYPES } from './constants';
 
@@ -18,7 +19,7 @@ import { getIndexPattern, HUMAN_IAM_IDENTITY_TYPES } from './constants';
  * contains the identity-provider name (e.g. "okta"), not the actual person.
  */
 export function buildEsqlQuery(namespace: string): string {
-  const userFieldEvals = euid.esql.getFieldEvaluations('user');
+  const userFieldEvals = getFieldEvaluationsEsql('user');
   const userFieldEvalsLine = userFieldEvals ? `| EVAL ${userFieldEvals}\n` : '';
 
   const iamTypesLiteral = HUMAN_IAM_IDENTITY_TYPES.map((t) => `"${t}"`).join(', ');

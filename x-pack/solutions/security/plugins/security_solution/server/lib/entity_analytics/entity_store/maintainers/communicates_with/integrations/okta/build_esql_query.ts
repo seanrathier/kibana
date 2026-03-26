@@ -5,15 +5,20 @@
  * 2.0.
  */
 
-import { euid } from '@kbn/entity-store/common/euid_helpers';
+import {
+  getFieldEvaluationsEsql,
+  getEuidEsqlEvaluation,
+  getEuidEsqlDocumentsContainsIdFilter,
+} from '@kbn/entity-store/common/domain/euid';
+
 import { COMPOSITE_PAGE_SIZE } from '../../constants';
 import { getIndexPattern, OKTA_AUTH_EVENT_ACTIONS } from './constants';
 
 export function buildEsqlQuery(namespace: string): string {
-  const userFieldEvals = euid.esql.getFieldEvaluations('user');
+  const userFieldEvals = getFieldEvaluationsEsql('user');
   const userFieldEvalsLine = userFieldEvals ? `| EVAL ${userFieldEvals}\n` : '';
-  const userIdEval = euid.esql.getEuidEvaluation('user', { withTypeId: true });
-  const userIdFilter = euid.esql.getEuidDocumentsContainsIdFilter('user');
+  const userIdEval = getEuidEsqlEvaluation('user', { withTypeId: true });
+  const userIdFilter = getEuidEsqlDocumentsContainsIdFilter('user');
 
   const actionsLiteral = OKTA_AUTH_EVENT_ACTIONS.map((a) => `"${a}"`).join(', ');
 
