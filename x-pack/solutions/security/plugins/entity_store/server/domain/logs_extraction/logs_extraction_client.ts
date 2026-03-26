@@ -29,7 +29,6 @@ import { getLatestEntitiesIndexName } from '../../../common/domain/entity_index'
 import { getUpdatesEntitiesDataStreamName } from '../asset_manager/updates_data_stream';
 import { executeEsqlQuery } from '../../infra/elasticsearch/esql';
 import { ingestEntities } from '../../infra/elasticsearch/ingest';
-import { mergeNestedFieldsFromUpdates } from './merge_nested_fields';
 import {
   getAlertsIndexName,
   getSecuritySolutionDataViewName,
@@ -256,9 +255,6 @@ export class LogsExtractionClient {
       entityDefinition,
     });
 
-    let mainResult: Awaited<ReturnType<typeof this.runMainExtractionLoop>>;
-    let ccsError: Error | undefined;
-
     if (remoteIndexPatterns.length > 0) {
       const ccsPromise = this.ccsLogsExtractionClient.extractToUpdates({
         type,
@@ -270,34 +266,16 @@ export class LogsExtractionClient {
         abortController: opts?.abortController,
       });
 
-      const [mr, ccsResult] = await Promise.all([mainPromise, ccsPromise]);
-      mainResult = mr;
-      ccsError = ccsResult.error;
-    } else {
-      mainResult = await mainPromise;
+      const [mainResult, ccsResult] = await Promise.all([mainPromise, ccsPromise]);
+
+      return {
+        ...mainResult,
+        indexPatterns: [...localIndexPatterns, ...remoteIndexPatterns],
+        ccsError: ccsResult.error,
+      };
     }
 
-    const updatesDataStream = getUpdatesEntitiesDataStreamName(this.namespace);
-    const nestedMergeCount = await mergeNestedFieldsFromUpdates({
-      esClient: this.esClient,
-      logger: this.logger,
-      entityDefinition,
-      updatesDataStream,
-      latestIndex,
-      fromDateISO,
-      toDateISO,
-      abortSignal: opts?.abortController?.signal,
-    });
-
-    this.logger.debug(`Merged ${nestedMergeCount} entities with nested fields`);
-
-    return {
-      ...mainResult,
-      ...(remoteIndexPatterns.length > 0
-        ? { indexPatterns: [...localIndexPatterns, ...remoteIndexPatterns] }
-        : {}),
-      ...(ccsError ? { ccsError } : {}),
-    };
+    return await mainPromise;
   }
 
   private async runMainExtractionLoop({

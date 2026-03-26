@@ -206,10 +206,7 @@ export function extractMainPaginationParams(
 }
 
 function mergedFieldStats(idFieldName: string, fields: EntityField[]): string {
-  // Exclude nested fields — see isEsqlCompatible in query_builder_commons.ts for rationale.
-  // Their data is merged into the latest index by mergeNestedFieldsFromUpdates instead.
   return fields
-    .filter((field) => field.mapping?.type !== 'nested')
     .map((field) => {
       const { retention, destination: dest } = field;
       const recentDest = recentData(dest);
