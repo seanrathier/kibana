@@ -343,7 +343,7 @@ export class Plugin implements ISecuritySolutionPlugin {
     });
 
     if (!experimentalFeatures.entityStoreDisabled) {
-      plugins.entityStore.registerEntityMaintainer(communicatesWithMaintainer);
+      plugins.entityStore?.registerEntityMaintainer(communicatesWithMaintainer);
 
       registerEntityStoreFieldRetentionEnrichTask({
         getStartServices: core.getStartServices,
