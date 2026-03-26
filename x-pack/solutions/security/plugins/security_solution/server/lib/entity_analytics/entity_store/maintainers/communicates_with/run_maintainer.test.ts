@@ -14,20 +14,11 @@ import type { CompositeAfterKey, ProcessedEntityRecord } from './types';
 import type { CommunicatesWithIntegrationConfig } from './integrations';
 
 const mockPostprocessEsqlResults = jest.fn((): ProcessedEntityRecord[] => []);
-const mockResolveEntityIds = jest.fn(
-  (_es: unknown, _ns: string, _log: unknown, records: ProcessedEntityRecord[]) =>
-    Promise.resolve(records)
-);
 const mockUpdateEntityRelationships = jest.fn(() => Promise.resolve(0));
 
 jest.mock('./postprocess_records', () => ({
   postprocessEsqlResults: (...args: Parameters<typeof mockPostprocessEsqlResults>) =>
     mockPostprocessEsqlResults(...args),
-}));
-
-jest.mock('./resolve_entity_ids', () => ({
-  resolveEntityIds: (...args: Parameters<typeof mockResolveEntityIds>) =>
-    mockResolveEntityIds(...args),
 }));
 
 jest.mock('./update_entities', () => ({
@@ -98,7 +89,6 @@ describe('communicates_with runMaintainer', () => {
     jest.clearAllMocks();
     mockIntegration = createMockIntegration();
     mockPostprocessEsqlResults.mockReturnValue([]);
-    mockResolveEntityIds.mockImplementation((_es, _ns, _log, records) => Promise.resolve(records));
     mockUpdateEntityRelationships.mockResolvedValue(0);
   });
 
@@ -296,79 +286,6 @@ describe('communicates_with runMaintainer', () => {
       });
 
       expect(mockUpdateEntityRelationships).toHaveBeenCalledWith(crudClient, logger, []);
-    });
-  });
-
-  describe('cross-namespace entity resolution', () => {
-    it('passes collected records through resolveEntityIds before updating', async () => {
-      const buckets = [createBucket('user-1')];
-      esClient.search.mockResolvedValueOnce(createAggResponse(buckets));
-      esClient.esql.query.mockResolvedValueOnce(createEsqlResponse() as never);
-
-      const records: ProcessedEntityRecord[] = [
-        {
-          entityId: 'user:john@jamf_pro',
-          userEmail: 'john@acme.com',
-          userId: null,
-          userName: 'john@acme.com',
-          entityNamespace: 'jamf_pro',
-          communicates_with: ['host:LAPTOP-1'],
-        },
-      ];
-      mockPostprocessEsqlResults.mockReturnValueOnce(records);
-
-      await runMaintainer({
-        esClient,
-        logger,
-        namespace: 'default',
-        crudClient,
-        integrations: [mockIntegration],
-      });
-
-      expect(mockResolveEntityIds).toHaveBeenCalledTimes(1);
-      expect(mockResolveEntityIds).toHaveBeenCalledWith(esClient, 'default', logger, records);
-    });
-
-    it('updates with resolved records when resolver rewrites entity IDs', async () => {
-      const buckets = [createBucket('user-1')];
-      esClient.search.mockResolvedValueOnce(createAggResponse(buckets));
-      esClient.esql.query.mockResolvedValueOnce(createEsqlResponse() as never);
-
-      const originalRecords: ProcessedEntityRecord[] = [
-        {
-          entityId: 'user:john@jamf_pro',
-          userEmail: 'john@acme.com',
-          userId: null,
-          userName: 'john@acme.com',
-          entityNamespace: 'jamf_pro',
-          communicates_with: ['host:LAPTOP-1'],
-        },
-      ];
-      const resolvedRecords: ProcessedEntityRecord[] = [
-        {
-          ...originalRecords[0],
-          entityId: 'user:john@acme.com@okta',
-        },
-      ];
-
-      mockPostprocessEsqlResults.mockReturnValueOnce(originalRecords);
-      mockResolveEntityIds.mockResolvedValueOnce(resolvedRecords);
-      mockUpdateEntityRelationships.mockResolvedValue(1);
-
-      const result = await runMaintainer({
-        esClient,
-        logger,
-        namespace: 'default',
-        crudClient,
-        integrations: [mockIntegration],
-      });
-
-      expect(mockUpdateEntityRelationships).toHaveBeenCalledWith(
-        crudClient,
-        logger,
-        resolvedRecords
-      );
-      expect(result.totalUpdated).toBe(1);
     });
   });
 

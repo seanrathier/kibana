@@ -13,7 +13,6 @@ import { LOOKBACK_WINDOW, COMPOSITE_PAGE_SIZE, MAX_ITERATIONS } from './constant
 import type { CompositeAfterKey, CompositeBucket, ProcessedEntityRecord } from './types';
 import { INTEGRATION_CONFIGS, type CommunicatesWithIntegrationConfig } from './integrations';
 import { postprocessEsqlResults } from './postprocess_records';
-import { resolveEntityIds } from './resolve_entity_ids';
 import { updateEntityRelationships } from './update_entities';
 
 interface CompositeAggregations {
@@ -56,15 +55,8 @@ function errMsg(err: unknown): string {
  *    step 1 via a DSL filter, collects the unique target entities each user
  *    communicated with. Targets are stored as EUIDs (e.g. "service:s3.amazonaws.com").
  *
- * 3. **Resolve entity IDs** — Entity IDs produced by step 2 may carry an
- *    integration-specific namespace (e.g. `jamf_pro`) that differs from
- *    the canonical entity in the store (e.g. `okta`).  A cross-namespace
- *    lookup matches identity fields (email, id, name) against the latest
- *    entities index and rewrites each record's `entityId` to the canonical
- *    EUID before updating.
- *
- * 4. **Update relationships** — After all integrations and pages have been
- *    processed, the resolved records are written directly to the entity
+ * 3. **Update relationships** — After all integrations and pages have been
+ *    processed, the collected records are written directly to the entity
  *    store's latest entities index via the CRUD bulk update API.
  */
 export async function runMaintainer({
@@ -170,9 +162,7 @@ export async function runMaintainer({
     } while (afterKey);
   }
 
-  const resolvedRecords = await resolveEntityIds(esClient, namespace, logger, allRecords);
-
-  totalUpdated = await updateEntityRelationships(crudClient, logger, resolvedRecords);
+  totalUpdated = await updateEntityRelationships(crudClient, logger, allRecords);
 
   return {
     totalBuckets,
