@@ -31,8 +31,8 @@ describe('communicates_with Jamf Pro buildEsqlQuery', () => {
 
   it('builds actorUserId from user.email or user.name with @jamf_pro suffix', () => {
     const query = buildEsqlQuery('default');
-    expect(query).toContain('CONCAT(user.email, "@", entity.namespace)');
-    expect(query).toContain('CONCAT(user.name, "@", entity.namespace)');
+    expect(query).toContain('CONCAT("user:", user.email, "@", entity.namespace)');
+    expect(query).toContain('CONCAT("user:", user.name, "@", entity.namespace)');
   });
 
   it('does NOT reference user.id or user.domain (unmapped in Jamf Pro)', () => {

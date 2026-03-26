@@ -7,23 +7,32 @@
 
 import type { SearchResponse } from '@elastic/elasticsearch/lib/api/types';
 import { elasticsearchServiceMock, loggingSystemMock } from '@kbn/core/server/mocks';
-import type { EntityStoreCRUDClient } from '@kbn/entity-store/server';
+import type { EntityUpdateClient } from '@kbn/entity-store/server';
 import { runMaintainer } from './run_maintainer';
 import { COMPOSITE_PAGE_SIZE, MAX_ITERATIONS } from './constants';
 import type { CompositeAfterKey, ProcessedEntityRecord } from './types';
 import type { CommunicatesWithIntegrationConfig } from './integrations';
 
 const mockPostprocessEsqlResults = jest.fn((): ProcessedEntityRecord[] => []);
-const mockUpsertEntityRelationships = jest.fn(() => Promise.resolve(0));
+const mockResolveEntityIds = jest.fn(
+  (_es: unknown, _ns: string, _log: unknown, records: ProcessedEntityRecord[]) =>
+    Promise.resolve(records)
+);
+const mockUpdateEntityRelationships = jest.fn(() => Promise.resolve(0));
 
 jest.mock('./postprocess_records', () => ({
   postprocessEsqlResults: (...args: Parameters<typeof mockPostprocessEsqlResults>) =>
     mockPostprocessEsqlResults(...args),
 }));
 
-jest.mock('./upsert_entities', () => ({
-  upsertEntityRelationships: (...args: Parameters<typeof mockUpsertEntityRelationships>) =>
-    mockUpsertEntityRelationships(...args),
+jest.mock('./resolve_entity_ids', () => ({
+  resolveEntityIds: (...args: Parameters<typeof mockResolveEntityIds>) =>
+    mockResolveEntityIds(...args),
+}));
+
+jest.mock('./update_entities', () => ({
+  updateEntityRelationships: (...args: Parameters<typeof mockUpdateEntityRelationships>) =>
+    mockUpdateEntityRelationships(...args),
 }));
 
 function createMockIntegration(
@@ -79,14 +88,18 @@ function createEsqlResponse(columns: EsqlColumn[] = [], values: unknown[][] = []
 describe('communicates_with runMaintainer', () => {
   const esClient = elasticsearchServiceMock.createElasticsearchClient();
   const logger = loggingSystemMock.createLogger();
-  const crudClient = { upsertEntitiesBulk: jest.fn() } as unknown as EntityStoreCRUDClient;
+  const crudClient = {
+    bulkUpdateEntity: jest.fn(),
+    updateEntity: jest.fn(),
+  } as unknown as EntityUpdateClient;
   let mockIntegration: CommunicatesWithIntegrationConfig;
 
   beforeEach(() => {
     jest.clearAllMocks();
     mockIntegration = createMockIntegration();
     mockPostprocessEsqlResults.mockReturnValue([]);
-    mockUpsertEntityRelationships.mockResolvedValue(0);
+    mockResolveEntityIds.mockImplementation((_es, _ns, _log, records) => Promise.resolve(records));
+    mockUpdateEntityRelationships.mockResolvedValue(0);
   });
 
   describe('pagination', () => {
@@ -201,8 +214,8 @@ describe('communicates_with runMaintainer', () => {
     });
   });
 
-  describe('record aggregation and upsert', () => {
-    it('collects records across multiple pages and upserts once at the end', async () => {
+  describe('record aggregation and update', () => {
+    it('collects records across multiple pages and updates once at the end', async () => {
       const page1Buckets = Array.from({ length: COMPOSITE_PAGE_SIZE }, (_, i) =>
         createBucket(`user-${i}`)
       );
@@ -252,7 +265,7 @@ describe('communicates_with runMaintainer', () => {
         .mockReturnValueOnce(page1Records)
         .mockReturnValueOnce(page2Records);
 
-      mockUpsertEntityRelationships.mockResolvedValue(2);
+      mockUpdateEntityRelationships.mockResolvedValue(2);
 
       const result = await runMaintainer({
         esClient,
@@ -262,16 +275,16 @@ describe('communicates_with runMaintainer', () => {
         integrations: [mockIntegration],
       });
 
-      expect(mockUpsertEntityRelationships).toHaveBeenCalledTimes(1);
-      expect(mockUpsertEntityRelationships).toHaveBeenCalledWith(crudClient, logger, [
+      expect(mockUpdateEntityRelationships).toHaveBeenCalledTimes(1);
+      expect(mockUpdateEntityRelationships).toHaveBeenCalledWith(crudClient, logger, [
         ...page1Records,
         ...page2Records,
       ]);
       expect(result.totalCommunicationRecords).toBe(2);
-      expect(result.totalUpserted).toBe(2);
+      expect(result.totalUpdated).toBe(2);
     });
 
-    it('calls upsert with empty array when no records found', async () => {
+    it('calls update with empty array when no records found', async () => {
       esClient.search.mockResolvedValueOnce(createAggResponse([]));
 
       await runMaintainer({
@@ -282,7 +295,80 @@ describe('communicates_with runMaintainer', () => {
         integrations: [mockIntegration],
       });
 
-      expect(mockUpsertEntityRelationships).toHaveBeenCalledWith(crudClient, logger, []);
+      expect(mockUpdateEntityRelationships).toHaveBeenCalledWith(crudClient, logger, []);
+    });
+  });
+
+  describe('cross-namespace entity resolution', () => {
+    it('passes collected records through resolveEntityIds before updating', async () => {
+      const buckets = [createBucket('user-1')];
+      esClient.search.mockResolvedValueOnce(createAggResponse(buckets));
+      esClient.esql.query.mockResolvedValueOnce(createEsqlResponse() as never);
+
+      const records: ProcessedEntityRecord[] = [
+        {
+          entityId: 'user:john@jamf_pro',
+          userEmail: 'john@acme.com',
+          userId: null,
+          userName: 'john@acme.com',
+          entityNamespace: 'jamf_pro',
+          communicates_with: ['host:LAPTOP-1'],
+        },
+      ];
+      mockPostprocessEsqlResults.mockReturnValueOnce(records);
+
+      await runMaintainer({
+        esClient,
+        logger,
+        namespace: 'default',
+        crudClient,
+        integrations: [mockIntegration],
+      });
+
+      expect(mockResolveEntityIds).toHaveBeenCalledTimes(1);
+      expect(mockResolveEntityIds).toHaveBeenCalledWith(esClient, 'default', logger, records);
+    });
+
+    it('updates with resolved records when resolver rewrites entity IDs', async () => {
+      const buckets = [createBucket('user-1')];
+      esClient.search.mockResolvedValueOnce(createAggResponse(buckets));
+      esClient.esql.query.mockResolvedValueOnce(createEsqlResponse() as never);
+
+      const originalRecords: ProcessedEntityRecord[] = [
+        {
+          entityId: 'user:john@jamf_pro',
+          userEmail: 'john@acme.com',
+          userId: null,
+          userName: 'john@acme.com',
+          entityNamespace: 'jamf_pro',
+          communicates_with: ['host:LAPTOP-1'],
+        },
+      ];
+      const resolvedRecords: ProcessedEntityRecord[] = [
+        {
+          ...originalRecords[0],
+          entityId: 'user:john@acme.com@okta',
+        },
+      ];
+
+      mockPostprocessEsqlResults.mockReturnValueOnce(originalRecords);
+      mockResolveEntityIds.mockResolvedValueOnce(resolvedRecords);
+      mockUpdateEntityRelationships.mockResolvedValue(1);
+
+      const result = await runMaintainer({
+        esClient,
+        logger,
+        namespace: 'default',
+        crudClient,
+        integrations: [mockIntegration],
+      });
+
+      expect(mockUpdateEntityRelationships).toHaveBeenCalledWith(
+        crudClient,
+        logger,
+        resolvedRecords
+      );
+      expect(result.totalUpdated).toBe(1);
     });
   });
 
@@ -324,7 +410,7 @@ describe('communicates_with runMaintainer', () => {
       ];
 
       mockPostprocessEsqlResults.mockReturnValueOnce(records1).mockReturnValueOnce(records2);
-      mockUpsertEntityRelationships.mockResolvedValue(2);
+      mockUpdateEntityRelationships.mockResolvedValue(2);
 
       const result = await runMaintainer({
         esClient,
@@ -337,7 +423,7 @@ describe('communicates_with runMaintainer', () => {
       expect(esClient.search).toHaveBeenCalledTimes(2);
       expect(integration1.buildCompositeAggQuery).toHaveBeenCalledTimes(1);
       expect(integration2.buildCompositeAggQuery).toHaveBeenCalledTimes(1);
-      expect(mockUpsertEntityRelationships).toHaveBeenCalledWith(crudClient, logger, [
+      expect(mockUpdateEntityRelationships).toHaveBeenCalledWith(crudClient, logger, [
         ...records1,
         ...records2,
       ]);
@@ -446,7 +532,7 @@ describe('communicates_with runMaintainer', () => {
       ];
       esClient.esql.query.mockResolvedValueOnce(createEsqlResponse() as never);
       mockPostprocessEsqlResults.mockReturnValueOnce(records);
-      mockUpsertEntityRelationships.mockResolvedValue(1);
+      mockUpdateEntityRelationships.mockResolvedValue(1);
 
       const result = await runMaintainer({
         esClient,
@@ -460,7 +546,7 @@ describe('communicates_with runMaintainer', () => {
         expect.objectContaining({
           totalBuckets: 1,
           totalCommunicationRecords: 1,
-          totalUpserted: 1,
+          totalUpdated: 1,
           lastRunTimestamp: expect.any(String),
         })
       );

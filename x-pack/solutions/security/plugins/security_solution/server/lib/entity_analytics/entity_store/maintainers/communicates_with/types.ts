@@ -15,11 +15,12 @@ export interface CompositeBucket {
 }
 
 export interface ProcessedEntityRecord {
+  /** Full EUID with type prefix, e.g. "user:alice@acme.com@entra_id". */
   entityId: string;
   userEmail: string | null;
   userId: string | null;
   userName: string | null;
   entityNamespace: string | null;
-  /** Plain EUID strings (e.g. "service:s3.amazonaws.com"). Converted to { euid } objects at upsert time. */
+  /** Plain EUID strings, e.g. "service:s3.amazonaws.com". */
   communicates_with: string[];
 }

@@ -20,7 +20,7 @@ export const communicatesWithMaintainer: RegisterEntityMaintainerConfig = {
     logger.info('Starting communicates_with maintainer run');
     const result = await runMaintainer({ esClient, logger, namespace, crudClient });
     logger.info(
-      `Completed run: ${result.totalBuckets} user buckets, ${result.totalCommunicationRecords} communication records, ${result.totalUpserted} entities upserted`
+      `Completed run: ${result.totalBuckets} user buckets, ${result.totalCommunicationRecords} communication records, ${result.totalUpdated} entities updated`
     );
     return result;
   },

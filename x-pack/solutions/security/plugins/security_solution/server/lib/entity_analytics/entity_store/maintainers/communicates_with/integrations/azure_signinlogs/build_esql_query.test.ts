@@ -32,9 +32,9 @@ describe('communicates_with Azure Sign-in Logs buildEsqlQuery', () => {
 
   it('builds actorUserId from user.email, user.id, or user.name with @entra_id suffix', () => {
     const query = buildEsqlQuery('default');
-    expect(query).toContain('CONCAT(user.email, "@", entity.namespace)');
-    expect(query).toContain('CONCAT(user.id, "@", entity.namespace)');
-    expect(query).toContain('CONCAT(user.name, "@", entity.namespace)');
+    expect(query).toContain('CONCAT("user:", user.email, "@", entity.namespace)');
+    expect(query).toContain('CONCAT("user:", user.id, "@", entity.namespace)');
+    expect(query).toContain('CONCAT("user:", user.name, "@", entity.namespace)');
   });
 
   it('does NOT reference user.domain (unmapped in Azure Sign-in Logs)', () => {

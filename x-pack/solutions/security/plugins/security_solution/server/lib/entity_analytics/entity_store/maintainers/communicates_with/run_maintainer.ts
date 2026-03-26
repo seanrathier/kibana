@@ -7,13 +7,14 @@
 
 import type { ElasticsearchClient } from '@kbn/core/server';
 import type { Logger } from '@kbn/logging';
-import type { EntityStoreCRUDClient } from '@kbn/entity-store/server';
+import type { EntityUpdateClient } from '@kbn/entity-store/server';
 
 import { LOOKBACK_WINDOW, COMPOSITE_PAGE_SIZE, MAX_ITERATIONS } from './constants';
 import type { CompositeAfterKey, CompositeBucket, ProcessedEntityRecord } from './types';
 import { INTEGRATION_CONFIGS, type CommunicatesWithIntegrationConfig } from './integrations';
 import { postprocessEsqlResults } from './postprocess_records';
-import { upsertEntityRelationships } from './upsert_entities';
+import { resolveEntityIds } from './resolve_entity_ids';
+import { updateEntityRelationships } from './update_entities';
 
 interface CompositeAggregations {
   users: {
@@ -55,10 +56,16 @@ function errMsg(err: unknown): string {
  *    step 1 via a DSL filter, collects the unique target entities each user
  *    communicated with. Targets are stored as EUIDs (e.g. "service:s3.amazonaws.com").
  *
- * 3. **Upsert relationships** — After all integrations and pages have been
- *    processed, the accumulated records are written to the entity store's
- *    updates data stream so the extraction pipeline can merge them into the
- *    latest entities index.
+ * 3. **Resolve entity IDs** — Entity IDs produced by step 2 may carry an
+ *    integration-specific namespace (e.g. `jamf_pro`) that differs from
+ *    the canonical entity in the store (e.g. `okta`).  A cross-namespace
+ *    lookup matches identity fields (email, id, name) against the latest
+ *    entities index and rewrites each record's `entityId` to the canonical
+ *    EUID before updating.
+ *
+ * 4. **Update relationships** — After all integrations and pages have been
+ *    processed, the resolved records are written directly to the entity
+ *    store's latest entities index via the CRUD bulk update API.
  */
 export async function runMaintainer({
   esClient,
@@ -70,12 +77,12 @@ export async function runMaintainer({
   esClient: ElasticsearchClient;
   logger: Logger;
   namespace: string;
-  crudClient: EntityStoreCRUDClient;
+  crudClient: EntityUpdateClient;
   integrations?: CommunicatesWithIntegrationConfig[];
 }) {
   let totalBuckets = 0;
   let totalCommunicationRecords = 0;
-  let totalUpserted = 0;
+  let totalUpdated = 0;
   const allRecords: ProcessedEntityRecord[] = [];
 
   for (const integration of integrations) {
@@ -163,12 +170,14 @@ export async function runMaintainer({
     } while (afterKey);
   }
 
-  totalUpserted = await upsertEntityRelationships(crudClient, logger, allRecords);
+  const resolvedRecords = await resolveEntityIds(esClient, namespace, logger, allRecords);
+
+  totalUpdated = await updateEntityRelationships(crudClient, logger, resolvedRecords);
 
   return {
     totalBuckets,
     totalCommunicationRecords,
-    totalUpserted,
+    totalUpdated,
     lastRunTimestamp: new Date().toISOString(),
   };
 }

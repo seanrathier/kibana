@@ -27,7 +27,7 @@ export function buildEsqlQuery(namespace: string): string {
 | WHERE aws.cloudtrail.user_identity.type IN (${iamTypesLiteral})
     AND event.provider IS NOT NULL
     AND user.id IS NOT NULL
-${userFieldEvalsLine}| EVAL actorUserId = CONCAT(user.id, "@", entity.namespace)
+${userFieldEvalsLine}| EVAL actorUserId = CONCAT("user:", user.id, "@", entity.namespace)
 | WHERE actorUserId IS NOT NULL AND actorUserId != ""
 | EVAL targetEntityId = CONCAT("service:", event.provider)
 | WHERE targetEntityId IS NOT NULL AND targetEntityId != "service:"

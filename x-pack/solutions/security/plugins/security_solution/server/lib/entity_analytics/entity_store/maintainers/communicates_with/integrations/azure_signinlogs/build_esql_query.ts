@@ -24,9 +24,9 @@ export function buildEsqlQuery(namespace: string): string {
     AND (user.email IS NOT NULL OR user.id IS NOT NULL OR user.name IS NOT NULL)
 | EVAL entity.namespace = "entra_id"
 | EVAL actorUserId = CASE(
-    (user.email IS NOT NULL AND user.email != ""), CONCAT(user.email, "@", entity.namespace),
-    (user.id IS NOT NULL AND user.id != ""), CONCAT(user.id, "@", entity.namespace),
-    (user.name IS NOT NULL AND user.name != ""), CONCAT(user.name, "@", entity.namespace),
+    (user.email IS NOT NULL AND user.email != ""), CONCAT("user:", user.email, "@", entity.namespace),
+    (user.id IS NOT NULL AND user.id != ""), CONCAT("user:", user.id, "@", entity.namespace),
+    (user.name IS NOT NULL AND user.name != ""), CONCAT("user:", user.name, "@", entity.namespace),
     NULL)
 | WHERE actorUserId IS NOT NULL AND actorUserId != ""
 | EVAL targetEntityId = CONCAT("service:", azure.signinlogs.properties.app_display_name)

@@ -23,8 +23,8 @@ export function buildEsqlQuery(namespace: string): string {
     AND (host.name IS NOT NULL OR host.id IS NOT NULL)
 | EVAL entity.namespace = "jamf_pro"
 | EVAL actorUserId = CASE(
-    (user.email IS NOT NULL AND user.email != ""), CONCAT(user.email, "@", entity.namespace),
-    CONCAT(user.name, "@", entity.namespace))
+    (user.email IS NOT NULL AND user.email != ""), CONCAT("user:", user.email, "@", entity.namespace),
+    CONCAT("user:", user.name, "@", entity.namespace))
 | WHERE actorUserId IS NOT NULL AND actorUserId != ""
 | EVAL targetEntityId = CASE(
     (host.id IS NOT NULL AND host.id != ""), CONCAT("host:", host.id),

@@ -42,7 +42,7 @@ describe('communicates_with AWS CloudTrail buildEsqlQuery', () => {
   it('uses only user.id for identity (user.name is the IdP name for federated events)', () => {
     const query = buildEsqlQuery('default');
     expect(query).toContain('user.id IS NOT NULL');
-    expect(query).toContain('CONCAT(user.id, "@", entity.namespace)');
+    expect(query).toContain('CONCAT("user:", user.id, "@", entity.namespace)');
     expect(query).toContain('_userId = MIN(user.id)');
     expect(query).not.toContain('user.email');
     expect(query).not.toContain('user.name');
