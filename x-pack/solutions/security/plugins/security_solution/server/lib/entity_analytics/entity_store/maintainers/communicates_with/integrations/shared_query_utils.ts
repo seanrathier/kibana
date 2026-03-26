@@ -15,10 +15,6 @@ const USER_IDENTITY_FIELDS = euid.getEuidSourceFields('user').requiresOneOf;
 
 /**
  * Builds the composite aggregation query structure shared by all communicates_with integrations.
- *
- * Key differences from the accesses maintainer's equivalent:
- * - No `event.outcome == "success"` filter (both success and failure outcomes are included)
- * - No host ID filter (only user identity is required for discovery; the target entity varies per integration)
  */
 export function buildCompositeAggQueryBase(
   integrationFilters: QueryDslQueryContainer[],

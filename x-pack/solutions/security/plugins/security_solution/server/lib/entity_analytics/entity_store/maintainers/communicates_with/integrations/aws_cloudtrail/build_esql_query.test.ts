@@ -50,9 +50,6 @@ describe('communicates_with AWS CloudTrail buildEsqlQuery', () => {
   });
 
   it('does not add an explicit success-only filter', () => {
-    // communicates_with includes both success and failure outcomes.
-    // The EUID infrastructure may reference event.outcome internally (to exclude
-    // explicit failure outcomes), but we never add event.outcome == "success".
     const query = buildEsqlQuery('default');
     expect(query).not.toContain('event.outcome == "success"');
   });

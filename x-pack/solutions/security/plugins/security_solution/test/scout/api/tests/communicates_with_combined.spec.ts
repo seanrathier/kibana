@@ -18,6 +18,7 @@ import {
   seedIntegrationData,
   cleanupIntegrationData,
   cleanupEntityIndices,
+  installEntityStore,
   ALL_INTEGRATION_CONFIGS,
 } from '../fixtures';
 
@@ -31,8 +32,6 @@ apiTest.describe(
       const credentials = await samlAuth.asInteractiveUser('admin');
       defaultHeaders = { ...credentials.cookieHeader, ...COMMON_HEADERS };
 
-      await kbnClient.uiSettings.update({ 'securitySolution:entityStoreEnableV2': true });
-
       await apiClient
         .post(ENTITY_STORE_ROUTES.UNINSTALL, {
           headers: defaultHeaders,
@@ -41,19 +40,7 @@ apiTest.describe(
         })
         .catch(() => {});
 
-      const installResponse = await apiClient.post(ENTITY_STORE_ROUTES.INSTALL, {
-        headers: defaultHeaders,
-        responseType: 'json',
-        body: {},
-      });
-      expect([200, 201]).toContain(installResponse.statusCode);
-
-      const initResponse = await apiClient.post(ENTITY_STORE_ROUTES.ENTITY_MAINTAINERS_INIT, {
-        headers: defaultHeaders,
-        responseType: 'json',
-        body: {},
-      });
-      expect([200, 201]).toContain(initResponse.statusCode);
+      await installEntityStore(apiClient, defaultHeaders, kbnClient);
 
       await cleanupEntityIndices(esClient);
       for (const integrationConfig of ALL_INTEGRATION_CONFIGS) {
