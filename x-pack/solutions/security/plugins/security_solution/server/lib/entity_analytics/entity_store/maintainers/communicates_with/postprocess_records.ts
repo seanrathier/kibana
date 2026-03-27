@@ -30,11 +30,7 @@ export function postprocessEsqlResults(
     });
 
     return {
-      entityId: record.actorUserId as string,
-      userEmail: (record._userEmail as string) ?? null,
-      userId: (record._userId as string) ?? null,
-      userName: (record._userName as string) ?? null,
-      entityNamespace: (record._ns as string) ?? null,
+      entityId: (record.actorUserId as string) ?? null,
       communicates_with: toStringArray(record.communicates_with),
     };
   });

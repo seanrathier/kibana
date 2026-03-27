@@ -6,15 +6,12 @@
  */
 
 import type { QueryDslQueryContainer } from '@elastic/elasticsearch/lib/api/types';
-import {
-  getEuidSourceFields,
-  getEuidDslDocumentsContainsIdFilter,
-} from '@kbn/entity-store/common/domain/euid';
+import { euid } from '@kbn/entity-store/common/euid_helpers';
 
 import { LOOKBACK_WINDOW, COMPOSITE_PAGE_SIZE } from '../constants';
 import type { CompositeAfterKey, CompositeBucket } from '../types';
 
-const USER_IDENTITY_FIELDS = getEuidSourceFields('user').requiresOneOf;
+const USER_IDENTITY_FIELDS = euid.getEuidSourceFields('user').requiresOneOf;
 
 /**
  * Builds the composite aggregation query structure shared by all communicates_with integrations.
@@ -30,7 +27,7 @@ export function buildCompositeAggQueryBase(
         filter: [
           { range: { '@timestamp': { gte: LOOKBACK_WINDOW, lt: 'now' } } },
           ...integrationFilters,
-          getEuidDslDocumentsContainsIdFilter('user'),
+          euid.dsl.getEuidDocumentsContainsIdFilter('user'),
         ],
       },
     },

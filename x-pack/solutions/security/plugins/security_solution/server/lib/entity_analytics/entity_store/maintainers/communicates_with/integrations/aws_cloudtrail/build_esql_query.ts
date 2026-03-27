@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import { getFieldEvaluationsEsql } from '@kbn/entity-store/common/domain/euid';
+import { euid } from '@kbn/entity-store/common/euid_helpers';
 
 import { COMPOSITE_PAGE_SIZE } from '../../constants';
 import { getIndexPattern, HUMAN_IAM_IDENTITY_TYPES } from './constants';
@@ -19,7 +19,7 @@ import { getIndexPattern, HUMAN_IAM_IDENTITY_TYPES } from './constants';
  * contains the identity-provider name (e.g. "okta"), not the actual person.
  */
 export function buildEsqlQuery(namespace: string): string {
-  const userFieldEvals = getFieldEvaluationsEsql('user');
+  const userFieldEvals = euid.esql.getFieldEvaluations('user');
   const userFieldEvalsLine = userFieldEvals ? `| EVAL ${userFieldEvals}\n` : '';
 
   const iamTypesLiteral = HUMAN_IAM_IDENTITY_TYPES.map((t) => `"${t}"`).join(', ');
@@ -32,6 +32,6 @@ ${userFieldEvalsLine}| EVAL actorUserId = CONCAT("user:", user.id, "@", entity.n
 | WHERE actorUserId IS NOT NULL AND actorUserId != ""
 | EVAL targetEntityId = CONCAT("service:", event.provider)
 | WHERE targetEntityId IS NOT NULL AND targetEntityId != "service:"
-| STATS communicates_with = VALUES(targetEntityId), _userId = MIN(user.id), _ns = MIN(entity.namespace) BY actorUserId
+| STATS communicates_with = VALUES(targetEntityId) BY actorUserId
 | LIMIT ${COMPOSITE_PAGE_SIZE}`;
 }

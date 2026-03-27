@@ -13,10 +13,6 @@ import type { ProcessedEntityRecord } from './types';
 function createRecord(overrides?: Partial<ProcessedEntityRecord>): ProcessedEntityRecord {
   return {
     entityId: 'user:alice@acme.com@aws',
-    userEmail: 'alice@acme.com',
-    userId: 'alice-user-id',
-    userName: 'Alice',
-    entityNamespace: 'aws',
     communicates_with: ['service:s3.amazonaws.com'],
     ...overrides,
   };
@@ -88,26 +84,6 @@ describe('communicates_with updateEntityRelationships', () => {
     await updateEntityRelationships(crudClient, logger, [record]);
     const { objects } = (crudClient.bulkUpdateEntity as jest.Mock).mock.calls[0][0];
     expect(objects[0].doc.entity.id).toBe('user:alice@acme.com@aws');
-  });
-
-  it('does not include user fields in the update doc', async () => {
-    const crudClient = createCrudClient();
-    const record = createRecord({
-      userEmail: 'alice@acme.com',
-      userId: 'alice-user-id',
-      userName: 'Alice',
-    });
-    await updateEntityRelationships(crudClient, logger, [record]);
-    const { objects } = (crudClient.bulkUpdateEntity as jest.Mock).mock.calls[0][0];
-    expect(objects[0].doc.user).toBeUndefined();
-  });
-
-  it('does not include event fields in the update doc', async () => {
-    const crudClient = createCrudClient();
-    const record = createRecord({ entityNamespace: 'azure' });
-    await updateEntityRelationships(crudClient, logger, [record]);
-    const { objects } = (crudClient.bulkUpdateEntity as jest.Mock).mock.calls[0][0];
-    expect(objects[0].doc.event).toBeUndefined();
   });
 
   it('calls bulkUpdateEntity with force: true', async () => {

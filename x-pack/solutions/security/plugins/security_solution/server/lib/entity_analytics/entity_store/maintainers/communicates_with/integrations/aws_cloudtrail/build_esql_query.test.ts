@@ -43,7 +43,6 @@ describe('communicates_with AWS CloudTrail buildEsqlQuery', () => {
     const query = buildEsqlQuery('default');
     expect(query).toContain('user.id IS NOT NULL');
     expect(query).toContain('CONCAT("user:", user.id, "@", entity.namespace)');
-    expect(query).toContain('_userId = MIN(user.id)');
     expect(query).not.toContain('user.email');
     expect(query).not.toContain('user.name');
     expect(query).not.toContain('host.id');

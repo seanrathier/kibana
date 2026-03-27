@@ -10,7 +10,6 @@ import { expect } from '@kbn/scout-security/api';
 import {
   apiTest,
   COMMON_HEADERS,
-  ENTITY_STORE_ROUTES,
   ENTITY_STORE_TAGS,
   UPDATES_INDEX,
   triggerMaintainerRun,
@@ -32,32 +31,19 @@ apiTest.describe(
       const credentials = await samlAuth.asInteractiveUser('admin');
       defaultHeaders = { ...credentials.cookieHeader, ...COMMON_HEADERS };
 
-      await apiClient
-        .post(ENTITY_STORE_ROUTES.UNINSTALL, {
-          headers: defaultHeaders,
-          responseType: 'json',
-          body: {},
-        })
-        .catch(() => {});
-
       await installEntityStore(apiClient, defaultHeaders, kbnClient);
 
       await cleanupEntityIndices(esClient);
-      for (const integrationConfig of ALL_INTEGRATION_CONFIGS) {
-        await seedIntegrationData(esClient, integrationConfig);
-      }
+      await Promise.all(
+        ALL_INTEGRATION_CONFIGS.map((config) => seedIntegrationData(esClient, config))
+      );
     });
 
-    apiTest.afterAll(async ({ esClient, apiClient }) => {
-      for (const integrationConfig of ALL_INTEGRATION_CONFIGS) {
-        await cleanupIntegrationData(esClient, integrationConfig);
-      }
+    apiTest.afterAll(async ({ esClient }) => {
+      await Promise.all(
+        ALL_INTEGRATION_CONFIGS.map((config) => cleanupIntegrationData(esClient, config))
+      );
       await cleanupEntityIndices(esClient);
-      await apiClient.post(ENTITY_STORE_ROUTES.UNINSTALL, {
-        headers: defaultHeaders,
-        responseType: 'json',
-        body: {},
-      });
     });
 
     apiTest(

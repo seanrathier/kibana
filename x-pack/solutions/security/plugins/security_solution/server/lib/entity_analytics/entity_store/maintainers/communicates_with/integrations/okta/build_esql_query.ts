@@ -5,20 +5,16 @@
  * 2.0.
  */
 
-import {
-  getFieldEvaluationsEsql,
-  getEuidEsqlEvaluation,
-  getEuidEsqlDocumentsContainsIdFilter,
-} from '@kbn/entity-store/common/domain/euid';
+import { euid } from '@kbn/entity-store/common/euid_helpers';
 
 import { COMPOSITE_PAGE_SIZE } from '../../constants';
 import { getIndexPattern, OKTA_AUTH_EVENT_ACTIONS } from './constants';
 
 export function buildEsqlQuery(namespace: string): string {
-  const userFieldEvals = getFieldEvaluationsEsql('user');
+  const userFieldEvals = euid.esql.getFieldEvaluations('user');
   const userFieldEvalsLine = userFieldEvals ? `| EVAL ${userFieldEvals}\n` : '';
-  const userIdEval = getEuidEsqlEvaluation('user', { withTypeId: true });
-  const userIdFilter = getEuidEsqlDocumentsContainsIdFilter('user');
+  const userIdEval = euid.esql.getEuidEvaluation('user', { withTypeId: true });
+  const userIdFilter = euid.esql.getEuidDocumentsContainsIdFilter('user');
 
   const actionsLiteral = OKTA_AUTH_EVENT_ACTIONS.map((a) => `"${a}"`).join(', ');
 
@@ -31,6 +27,6 @@ ${userFieldEvalsLine}| EVAL actorUserId = ${userIdEval}
 | MV_EXPAND okta.target.display_name
 | EVAL targetEntityId = CONCAT("service:", okta.target.display_name)
 | WHERE targetEntityId IS NOT NULL AND targetEntityId != "service:"
-| STATS communicates_with = VALUES(targetEntityId), _userEmail = MIN(user.email), _userId = MIN(user.id), _userName = MIN(user.name), _ns = MIN(entity.namespace) BY actorUserId
+| STATS communicates_with = VALUES(targetEntityId) BY actorUserId
 | LIMIT ${COMPOSITE_PAGE_SIZE}`;
 }

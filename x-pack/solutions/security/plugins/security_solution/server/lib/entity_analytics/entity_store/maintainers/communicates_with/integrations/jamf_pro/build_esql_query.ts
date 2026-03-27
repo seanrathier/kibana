@@ -31,6 +31,6 @@ export function buildEsqlQuery(namespace: string): string {
     CONCAT("host:", host.name))
 | MV_EXPAND targetEntityId
 | WHERE targetEntityId IS NOT NULL AND targetEntityId != "host:"
-| STATS communicates_with = VALUES(targetEntityId), _userEmail = MIN(user.email), _userName = MIN(user.name), _ns = MIN(entity.namespace) BY actorUserId
+| STATS communicates_with = VALUES(targetEntityId) BY actorUserId
 | LIMIT ${COMPOSITE_PAGE_SIZE}`;
 }

@@ -27,8 +27,7 @@ export const euid = {
   getEuidFromObject: euidModule.getEuidFromObject,
 
   /**
-   * Returns the identity source fields configuration for a given entity type.
-   * Input: entity type. Output: `IdentitySourceFields` with `requiresOneOf` and optional `requiresAll`.
+   * Returns the identity source fields (e.g. `user.email`, `user.id`) for a given entity type.
    */
   getEuidSourceFields: euidModule.getEuidSourceFields,
 
@@ -72,7 +71,8 @@ export const euid = {
     getEuidFilterBasedOnDocument: euidModule.getEuidEsqlFilterBasedOnDocument,
 
     /**
-     * Returns ESQL field evaluation strings (EVAL expressions) for the identity fields of a given entity type.
+     * Returns the ESQL `EVAL` expressions for field evaluations (e.g. entity.namespace derivation).
+     * Input: entity type. Output: ESQL expression string for `EVAL`, or `undefined` if none defined.
      */
     getFieldEvaluations: euidModule.getFieldEvaluationsEsql,
   },
