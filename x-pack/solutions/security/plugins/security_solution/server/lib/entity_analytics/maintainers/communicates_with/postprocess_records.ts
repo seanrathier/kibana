@@ -21,7 +21,8 @@ function toStringArray(value: unknown): string[] {
 
 export function postprocessEsqlResults(
   columns: EsqlColumn[],
-  values: unknown[][]
+  values: unknown[][],
+  entityType: string
 ): ProcessedEntityRecord[] {
   return values.map((row) => {
     const record: Record<string, unknown> = {};
@@ -31,6 +32,7 @@ export function postprocessEsqlResults(
 
     return {
       entityId: (record.actorUserId as string) ?? null,
+      entityType,
       communicates_with: toStringArray(record.communicates_with),
     };
   });

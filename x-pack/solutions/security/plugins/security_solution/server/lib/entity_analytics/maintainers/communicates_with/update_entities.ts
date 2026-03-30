@@ -11,6 +11,29 @@ import type { Entity } from '@kbn/entity-store/common/domain/definitions/entity.
 
 import type { ProcessedEntityRecord } from './types';
 
+interface MergedEntity {
+  entityType: string;
+  targets: Set<string>;
+}
+
+function mergeRecordsByEntityId(records: ProcessedEntityRecord[]): Map<string, MergedEntity> {
+  const merged = new Map<string, MergedEntity>();
+  for (const r of records) {
+    if (r.entityId && r.communicates_with.length > 0) {
+      const existing = merged.get(r.entityId);
+      if (existing) {
+        for (const t of r.communicates_with) existing.targets.add(t);
+      } else {
+        merged.set(r.entityId, {
+          entityType: r.entityType,
+          targets: new Set(r.communicates_with),
+        });
+      }
+    }
+  }
+  return merged;
+}
+
 export async function updateEntityRelationships(
   crudClient: EntityUpdateClient,
   logger: Logger,
@@ -18,19 +41,19 @@ export async function updateEntityRelationships(
 ): Promise<number> {
   if (records.length === 0) return 0;
 
-  const objects: BulkObject[] = records
-    .filter((r) => r.communicates_with.length > 0)
-    .map((r) => ({
-      type: 'user' as const,
-      doc: {
-        entity: {
-          id: r.entityId,
-          relationships: {
-            communicates_with: r.communicates_with,
-          },
+  const merged = mergeRecordsByEntityId(records);
+
+  const objects: BulkObject[] = Array.from(merged, ([entityId, { entityType, targets }]) => ({
+    type: entityType as BulkObject['type'],
+    doc: {
+      entity: {
+        id: entityId,
+        relationships: {
+          communicates_with: Array.from(targets),
         },
-      } as Entity,
-    }));
+      },
+    } as Entity,
+  }));
 
   if (objects.length === 0) return 0;
 

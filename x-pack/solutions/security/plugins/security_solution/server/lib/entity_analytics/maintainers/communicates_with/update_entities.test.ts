@@ -13,6 +13,7 @@ import type { ProcessedEntityRecord } from './types';
 function createRecord(overrides?: Partial<ProcessedEntityRecord>): ProcessedEntityRecord {
   return {
     entityId: 'user:alice@acme.com@aws',
+    entityType: 'user',
     communicates_with: ['service:s3.amazonaws.com'],
     ...overrides,
   };
@@ -86,6 +87,14 @@ describe('communicates_with updateEntityRelationships', () => {
     expect(objects[0].doc.entity.id).toBe('user:alice@acme.com@aws');
   });
 
+  it('uses entityType from the record instead of hardcoding user', async () => {
+    const crudClient = createCrudClient();
+    const record = createRecord({ entityType: 'host' });
+    await updateEntityRelationships(crudClient, logger, [record]);
+    const { objects } = (crudClient.bulkUpdateEntity as jest.Mock).mock.calls[0][0];
+    expect(objects[0].type).toBe('host');
+  });
+
   it('calls bulkUpdateEntity with force: true', async () => {
     const crudClient = createCrudClient();
     await updateEntityRelationships(crudClient, logger, [createRecord()]);
@@ -127,5 +136,52 @@ describe('communicates_with updateEntityRelationships', () => {
     expect(crudClient.bulkUpdateEntity).toHaveBeenCalledTimes(1);
     const { objects } = (crudClient.bulkUpdateEntity as jest.Mock).mock.calls[0][0];
     expect(objects).toHaveLength(3);
+  });
+
+  it('merges communicates_with targets when the same entityId appears from multiple integrations', async () => {
+    const crudClient = createCrudClient();
+    const records = [
+      createRecord({
+        entityId: 'user:alice@acme.com@entra_id',
+        communicates_with: ['service:Microsoft Teams'],
+      }),
+      createRecord({
+        entityId: 'user:alice@acme.com@entra_id',
+        communicates_with: ['service:Slack'],
+      }),
+    ];
+    await updateEntityRelationships(crudClient, logger, records);
+    const { objects } = (crudClient.bulkUpdateEntity as jest.Mock).mock.calls[0][0];
+    expect(objects).toHaveLength(1);
+    expect(objects[0].doc.entity.id).toBe('user:alice@acme.com@entra_id');
+    expect(objects[0].doc.entity.relationships.communicates_with).toEqual(
+      expect.arrayContaining(['service:Microsoft Teams', 'service:Slack'])
+    );
+  });
+
+  it('deduplicates identical target strings when merging records', async () => {
+    const crudClient = createCrudClient();
+    const records = [
+      createRecord({
+        entityId: 'user:bob@acme.com@aws',
+        communicates_with: ['service:s3.amazonaws.com', 'service:ec2.amazonaws.com'],
+      }),
+      createRecord({
+        entityId: 'user:bob@acme.com@aws',
+        communicates_with: ['service:s3.amazonaws.com', 'service:lambda.amazonaws.com'],
+      }),
+    ];
+    await updateEntityRelationships(crudClient, logger, records);
+    const { objects } = (crudClient.bulkUpdateEntity as jest.Mock).mock.calls[0][0];
+    expect(objects).toHaveLength(1);
+    const targets = objects[0].doc.entity.relationships.communicates_with;
+    expect(targets).toHaveLength(3);
+    expect(targets).toEqual(
+      expect.arrayContaining([
+        'service:s3.amazonaws.com',
+        'service:ec2.amazonaws.com',
+        'service:lambda.amazonaws.com',
+      ])
+    );
   });
 });

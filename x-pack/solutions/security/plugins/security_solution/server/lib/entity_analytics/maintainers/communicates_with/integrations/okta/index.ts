@@ -13,6 +13,7 @@ import { buildEsqlQuery } from './build_esql_query';
 export const oktaIntegration: CommunicatesWithIntegrationConfig = {
   id: 'okta',
   name: 'Okta System Logs',
+  entityType: 'user',
   getIndexPattern,
   buildCompositeAggQuery,
   buildBucketUserFilter,

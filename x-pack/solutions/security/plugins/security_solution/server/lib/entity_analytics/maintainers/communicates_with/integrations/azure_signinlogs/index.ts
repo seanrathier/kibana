@@ -13,6 +13,7 @@ import { buildEsqlQuery } from './build_esql_query';
 export const azureSigninLogsIntegration: CommunicatesWithIntegrationConfig = {
   id: 'azure_signinlogs',
   name: 'Azure Sign-in Logs',
+  entityType: 'user',
   getIndexPattern,
   buildCompositeAggQuery,
   buildBucketUserFilter,

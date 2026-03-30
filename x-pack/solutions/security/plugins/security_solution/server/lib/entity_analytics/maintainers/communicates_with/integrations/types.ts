@@ -6,11 +6,14 @@
  */
 
 import type { QueryDslQueryContainer } from '@elastic/elasticsearch/lib/api/types';
+import type { EntityType } from '@kbn/entity-store/common';
+
 import type { CompositeAfterKey, CompositeBucket } from '../types';
 
 export interface CommunicatesWithIntegrationConfig {
   id: string;
   name: string;
+  entityType: EntityType;
   getIndexPattern: (namespace: string) => string;
   buildCompositeAggQuery: (afterKey?: CompositeAfterKey) => Record<string, unknown>;
   buildBucketUserFilter: (buckets: CompositeBucket[]) => QueryDslQueryContainer;

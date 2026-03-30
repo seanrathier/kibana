@@ -13,6 +13,7 @@ import { buildEsqlQuery } from './build_esql_query';
 export const awsCloudTrailIntegration: CommunicatesWithIntegrationConfig = {
   id: 'aws_cloudtrail',
   name: 'AWS CloudTrail',
+  entityType: 'user',
   getIndexPattern,
   buildCompositeAggQuery,
   buildBucketUserFilter,

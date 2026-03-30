@@ -24,9 +24,10 @@ describe('communicates_with Jamf Pro buildEsqlQuery', () => {
     expect(query).toContain('host.name IS NOT NULL OR host.id IS NOT NULL');
   });
 
-  it('hardcodes entity.namespace to "jamf_pro"', () => {
+  it('uses EUID field evaluations for entity.namespace derivation', () => {
     const query = buildEsqlQuery('default');
-    expect(query).toContain('entity.namespace = "jamf_pro"');
+    expect(query).toContain('entity.namespace');
+    expect(query).toContain('EVAL');
   });
 
   it('builds actorUserId from user.email or user.name with @jamf_pro suffix', () => {

@@ -13,6 +13,7 @@ import { buildEsqlQuery } from './build_esql_query';
 export const jamfProIntegration: CommunicatesWithIntegrationConfig = {
   id: 'jamf_pro',
   name: 'Jamf Pro Events',
+  entityType: 'user',
   getIndexPattern,
   buildCompositeAggQuery,
   buildBucketUserFilter,

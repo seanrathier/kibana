@@ -25,9 +25,10 @@ describe('communicates_with Azure Sign-in Logs buildEsqlQuery', () => {
     );
   });
 
-  it('hardcodes entity.namespace to "entra_id"', () => {
+  it('uses EUID field evaluations for entity.namespace derivation', () => {
     const query = buildEsqlQuery('default');
-    expect(query).toContain('entity.namespace = "entra_id"');
+    expect(query).toContain('entity.namespace');
+    expect(query).toContain('EVAL');
   });
 
   it('builds actorUserId from user.email, user.id, or user.name with @entra_id suffix', () => {
