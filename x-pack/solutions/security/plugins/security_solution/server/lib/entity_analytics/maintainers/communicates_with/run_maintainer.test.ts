@@ -17,7 +17,7 @@ const mockPostprocessEsqlResults = jest.fn((): ProcessedEntityRecord[] => []);
 const mockUpdateEntityRelationships = jest.fn(() => Promise.resolve(0));
 
 jest.mock('./postprocess_records', () => ({
-  postprocessEsqlResults: (...args: Parameters<typeof mockPostprocessEsqlResults>) =>
+  postProcessEsqlResults: (...args: Parameters<typeof mockPostprocessEsqlResults>) =>
     mockPostprocessEsqlResults(...args),
 }));
 

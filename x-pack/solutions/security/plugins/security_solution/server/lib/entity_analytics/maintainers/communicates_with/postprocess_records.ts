@@ -19,7 +19,7 @@ function toStringArray(value: unknown): string[] {
   return [];
 }
 
-export function postprocessEsqlResults(
+export function postProcessEsqlResults(
   columns: EsqlColumn[],
   values: unknown[][],
   entityType: string
@@ -31,7 +31,7 @@ export function postprocessEsqlResults(
     });
 
     return {
-      entityId: (record.actorUserId as string) ?? null,
+      entityId: toStringArray(record.actorUserId)[0] ?? null,
       entityType,
       communicates_with: toStringArray(record.communicates_with),
     };

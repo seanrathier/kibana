@@ -12,7 +12,7 @@ import type { EntityUpdateClient } from '@kbn/entity-store/server';
 import { LOOKBACK_WINDOW, COMPOSITE_PAGE_SIZE, MAX_ITERATIONS } from './constants';
 import type { CompositeAfterKey, CompositeBucket, ProcessedEntityRecord } from './types';
 import { INTEGRATION_CONFIGS, type CommunicatesWithIntegrationConfig } from './integrations';
-import { postprocessEsqlResults } from './postprocess_records';
+import { postProcessEsqlResults } from './postprocess_records';
 import { updateEntityRelationships } from './update_entities';
 
 interface CompositeAggregations {
@@ -167,7 +167,7 @@ export async function runMaintainer({
       const { columns, values } = esqlResult as unknown as EsqlQueryResult;
 
       if (columns && values) {
-        const records = postprocessEsqlResults(columns, values, integration.entityType);
+        const records = postProcessEsqlResults(columns, values, integration.entityType);
         totalCommunicationRecords += records.length;
         allRecords.push(...records);
 
