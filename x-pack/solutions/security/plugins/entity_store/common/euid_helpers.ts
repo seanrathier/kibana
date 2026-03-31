@@ -42,11 +42,6 @@ export const euid = {
   getEuidSourceFields: euidModule.getEuidSourceFields,
 
   /**
-   * Returns the identity source fields (e.g. `user.email`, `user.id`) for a given entity type.
-   */
-  getEuidSourceFields: euidModule.getEuidSourceFields,
-
-  /**
    * Painless-backed EUID helpers for runtime fields and scripts (same semantics as `getEuidFromObject`).
    */
   painless: {
