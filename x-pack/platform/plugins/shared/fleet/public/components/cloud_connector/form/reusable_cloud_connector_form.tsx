@@ -21,7 +21,18 @@ export const ReusableCloudConnectorForm: React.FC<{
   cloudProvider?: CloudProvider;
   isEditPage: boolean;
   accountType?: AccountType;
-}> = ({ credentials, setCredentials, cloudProvider, newPolicy, isEditPage, accountType }) => {
+  packageName?: string;
+  policyTemplate?: string;
+}> = ({
+  credentials,
+  setCredentials,
+  cloudProvider,
+  newPolicy,
+  isEditPage,
+  accountType,
+  packageName,
+  policyTemplate,
+}) => {
   const provider = cloudProvider || AWS_PROVIDER;
 
   switch (provider) {
@@ -33,6 +44,8 @@ export const ReusableCloudConnectorForm: React.FC<{
           cloudConnectorId={newPolicy.cloud_connector_id || undefined}
           setCredentials={setCredentials}
           accountType={accountType}
+          packageName={packageName}
+          policyTemplate={policyTemplate}
         />
       );
     case AZURE_PROVIDER:
@@ -43,6 +56,8 @@ export const ReusableCloudConnectorForm: React.FC<{
           cloudConnectorId={newPolicy.cloud_connector_id || undefined}
           setCredentials={setCredentials}
           accountType={accountType}
+          packageName={packageName}
+          policyTemplate={policyTemplate}
         />
       );
     case 'gcp':
