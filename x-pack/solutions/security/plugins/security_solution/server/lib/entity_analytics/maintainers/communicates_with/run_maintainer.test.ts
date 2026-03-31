@@ -556,7 +556,7 @@ describe('communicates_with runMaintainer', () => {
       expect(result.totalUpdated).toBe(0);
     });
 
-    it('passes abort signal to esClient.search', async () => {
+    it('passes abort signal to esClient.search as a transport option', async () => {
       const abortCtrl = new AbortController();
       esClient.search.mockResolvedValueOnce(createAggResponse([]));
 
@@ -570,11 +570,12 @@ describe('communicates_with runMaintainer', () => {
       });
 
       expect(esClient.search).toHaveBeenCalledWith(
+        expect.not.objectContaining({ signal: expect.anything() }),
         expect.objectContaining({ signal: abortCtrl.signal })
       );
     });
 
-    it('passes abort signal to esClient.esql.query', async () => {
+    it('passes abort signal to esClient.esql.query as a transport option', async () => {
       const abortCtrl = new AbortController();
       esClient.search.mockResolvedValueOnce(createAggResponse([createBucket('user-1')]));
       esClient.esql.query.mockResolvedValueOnce(createEsqlResponse() as never);
@@ -589,6 +590,7 @@ describe('communicates_with runMaintainer', () => {
       });
 
       expect(esClient.esql.query).toHaveBeenCalledWith(
+        expect.not.objectContaining({ signal: expect.anything() }),
         expect.objectContaining({ signal: abortCtrl.signal })
       );
     });

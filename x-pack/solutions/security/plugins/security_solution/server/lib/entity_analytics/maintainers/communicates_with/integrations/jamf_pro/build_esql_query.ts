@@ -10,23 +10,17 @@ import { euid } from '@kbn/entity-store/common/euid_helpers';
 import { COMPOSITE_PAGE_SIZE } from '../../constants';
 import { getIndexPattern } from './constants';
 
-/**
- * Jamf Pro uses field evaluations from the EUID helpers for entity.namespace
- * derivation but a hand-written actorUserId CASE because
- * `logs-jamf_pro.events-*` lacks `user.id` and `user.domain`.  The full
- * `euid.esql.getEuidEvaluation('user')` would reference those unmapped fields
- * and cause a verification_exception.
- */
 export function buildEsqlQuery(namespace: string): string {
   const userFieldEvals = euid.esql.getFieldEvaluations('user');
   const userFieldEvalsLine = userFieldEvals ? `| EVAL ${userFieldEvals}\n` : '';
+  const userIdFilter = euid.esql.getEuidDocumentsContainsIdFilter('user');
+  const userEuidEval = euid.esql.getEuidEvaluation('user', { withTypeId: true });
 
-  return `FROM ${getIndexPattern(namespace)}
-| WHERE user.name IS NOT NULL AND user.name != ""
+  return `SET unmapped_fields="nullify";
+FROM ${getIndexPattern(namespace)}
+| WHERE (${userIdFilter})
     AND (host.name IS NOT NULL OR host.id IS NOT NULL)
-${userFieldEvalsLine}| EVAL actorUserId = CASE(
-    (user.email IS NOT NULL AND user.email != ""), CONCAT("user:", user.email, "@", entity.namespace),
-    CONCAT("user:", user.name, "@", entity.namespace))
+${userFieldEvalsLine}| EVAL actorUserId = ${userEuidEval}
 | WHERE actorUserId IS NOT NULL AND actorUserId != ""
 | EVAL targetEntityId = CASE(
     (host.id IS NOT NULL AND host.id != ""), CONCAT("host:", host.id),

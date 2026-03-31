@@ -5,12 +5,19 @@
  * 2.0.
  */
 
+import { euid } from '@kbn/entity-store/common/euid_helpers';
+
 import { buildEsqlQuery } from './build_esql_query';
 
 describe('communicates_with AWS CloudTrail buildEsqlQuery', () => {
   it('uses the namespace to form the index pattern', () => {
     expect(buildEsqlQuery('default')).toContain('FROM logs-aws.cloudtrail-default');
     expect(buildEsqlQuery('production')).toContain('FROM logs-aws.cloudtrail-production');
+  });
+
+  it('sets unmapped_fields to nullify so unmapped columns become NULL instead of errors', () => {
+    const query = buildEsqlQuery('default');
+    expect(query).toMatch(/^SET unmapped_fields="nullify";\n/);
   });
 
   it('filters for human IAM identity types', () => {
@@ -28,6 +35,18 @@ describe('communicates_with AWS CloudTrail buildEsqlQuery', () => {
     expect(query).toContain('event.provider IS NOT NULL');
   });
 
+  it('uses the standard user EUID documents-contains-id filter', () => {
+    const query = buildEsqlQuery('default');
+    const userIdFilter = euid.esql.getEuidDocumentsContainsIdFilter('user');
+    expect(query).toContain(userIdFilter);
+  });
+
+  it('derives actorUserId from the standard user EUID evaluation', () => {
+    const query = buildEsqlQuery('default');
+    const userEuidEval = euid.esql.getEuidEvaluation('user', { withTypeId: true });
+    expect(query).toContain(`actorUserId = ${userEuidEval}`);
+  });
+
   it('constructs target EUID as service: + event.provider', () => {
     const query = buildEsqlQuery('default');
     expect(query).toContain('CONCAT("service:", event.provider)');
@@ -37,15 +56,6 @@ describe('communicates_with AWS CloudTrail buildEsqlQuery', () => {
     const query = buildEsqlQuery('default');
     expect(query).toContain('communicates_with = VALUES(targetEntityId)');
     expect(query).toContain('BY actorUserId');
-  });
-
-  it('uses only user.id for identity (user.name is the IdP name for federated events)', () => {
-    const query = buildEsqlQuery('default');
-    expect(query).toContain('user.id IS NOT NULL');
-    expect(query).toContain('CONCAT("user:", user.id, "@", entity.namespace)');
-    expect(query).not.toContain('user.email');
-    expect(query).not.toContain('user.name');
-    expect(query).not.toContain('host.id');
   });
 
   it('does not add an explicit success-only filter', () => {

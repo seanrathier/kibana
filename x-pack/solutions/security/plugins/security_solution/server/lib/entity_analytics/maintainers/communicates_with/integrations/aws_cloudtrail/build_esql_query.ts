@@ -10,25 +10,20 @@ import { euid } from '@kbn/entity-store/common/euid_helpers';
 import { COMPOSITE_PAGE_SIZE } from '../../constants';
 import { getIndexPattern, HUMAN_IAM_IDENTITY_TYPES } from './constants';
 
-/**
- * CloudTrail indices lack user.email, user.domain, and host.id so we cannot
- * use the generic EUID helpers (ES|QL validates every column at compile time).
- *
- * user.id (principalId) is always present and uniquely identifies the actor.
- * user.name is NOT used because for AssumedRole / FederatedUser events it
- * contains the identity-provider name (e.g. "okta"), not the actual person.
- */
 export function buildEsqlQuery(namespace: string): string {
   const userFieldEvals = euid.esql.getFieldEvaluations('user');
   const userFieldEvalsLine = userFieldEvals ? `| EVAL ${userFieldEvals}\n` : '';
+  const userIdFilter = euid.esql.getEuidDocumentsContainsIdFilter('user');
+  const userEuidEval = euid.esql.getEuidEvaluation('user', { withTypeId: true });
 
   const iamTypesLiteral = HUMAN_IAM_IDENTITY_TYPES.map((t) => `"${t}"`).join(', ');
 
-  return `FROM ${getIndexPattern(namespace)}
+  return `SET unmapped_fields="nullify";
+FROM ${getIndexPattern(namespace)}
 | WHERE aws.cloudtrail.user_identity.type IN (${iamTypesLiteral})
     AND event.provider IS NOT NULL
-    AND user.id IS NOT NULL
-${userFieldEvalsLine}| EVAL actorUserId = CONCAT("user:", user.id, "@", entity.namespace)
+    AND (${userIdFilter})
+${userFieldEvalsLine}| EVAL actorUserId = ${userEuidEval}
 | WHERE actorUserId IS NOT NULL AND actorUserId != ""
 | EVAL targetEntityId = CONCAT("service:", event.provider)
 | WHERE targetEntityId IS NOT NULL AND targetEntityId != "service:"

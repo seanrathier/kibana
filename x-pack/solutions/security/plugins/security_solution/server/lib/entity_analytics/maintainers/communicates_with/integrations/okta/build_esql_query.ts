@@ -18,7 +18,8 @@ export function buildEsqlQuery(namespace: string): string {
 
   const actionsLiteral = OKTA_AUTH_EVENT_ACTIONS.map((a) => `"${a}"`).join(', ');
 
-  return `FROM ${getIndexPattern(namespace)}
+  return `SET unmapped_fields="nullify";
+FROM ${getIndexPattern(namespace)}
 | WHERE event.action IN (${actionsLiteral})
     AND okta.target.display_name IS NOT NULL
     AND (${userIdFilter})

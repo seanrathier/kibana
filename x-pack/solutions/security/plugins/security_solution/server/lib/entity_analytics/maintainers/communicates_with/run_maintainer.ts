@@ -108,12 +108,15 @@ export async function runMaintainer({
       );
 
       let aggResult;
+      const transportOpts = abortController ? { signal: abortController.signal } : undefined;
       try {
-        aggResult = await esClient.search({
-          index: integration.getIndexPattern(namespace),
-          ...integration.buildCompositeAggQuery(afterKey),
-          ...(abortController && { signal: abortController.signal }),
-        });
+        aggResult = await esClient.search(
+          {
+            index: integration.getIndexPattern(namespace),
+            ...integration.buildCompositeAggQuery(afterKey),
+          },
+          transportOpts
+        );
       } catch (err) {
         if (isIndexNotFound(err)) {
           const idx = integration.getIndexPattern(namespace);
@@ -149,11 +152,13 @@ export async function runMaintainer({
 
       let esqlResult;
       try {
-        esqlResult = await esClient.esql.query({
-          query: esqlQuery,
-          filter: esqlFilter,
-          ...(abortController && { signal: abortController.signal }),
-        });
+        esqlResult = await esClient.esql.query(
+          {
+            query: esqlQuery,
+            filter: esqlFilter,
+          },
+          transportOpts
+        );
       } catch (esqlErr) {
         logger.error(`[${integration.id}] ES|QL query failed: ${errMsg(esqlErr)}`);
         throw esqlErr;

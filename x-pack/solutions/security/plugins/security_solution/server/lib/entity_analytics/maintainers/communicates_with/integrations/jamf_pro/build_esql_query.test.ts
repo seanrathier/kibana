@@ -5,6 +5,8 @@
  * 2.0.
  */
 
+import { euid } from '@kbn/entity-store/common/euid_helpers';
+
 import { buildEsqlQuery } from './build_esql_query';
 
 describe('communicates_with Jamf Pro buildEsqlQuery', () => {
@@ -13,15 +15,20 @@ describe('communicates_with Jamf Pro buildEsqlQuery', () => {
     expect(buildEsqlQuery('production')).toContain('FROM logs-jamf_pro.events-production');
   });
 
-  it('filters for non-null user.name', () => {
+  it('sets unmapped_fields to nullify so unmapped columns become NULL instead of errors', () => {
     const query = buildEsqlQuery('default');
-    expect(query).toContain('user.name IS NOT NULL');
-    expect(query).toContain('user.name != ""');
+    expect(query).toMatch(/^SET unmapped_fields="nullify";\n/);
   });
 
   it('requires at least one of host.name or host.id', () => {
     const query = buildEsqlQuery('default');
     expect(query).toContain('host.name IS NOT NULL OR host.id IS NOT NULL');
+  });
+
+  it('uses the standard user EUID documents-contains-id filter', () => {
+    const query = buildEsqlQuery('default');
+    const userIdFilter = euid.esql.getEuidDocumentsContainsIdFilter('user');
+    expect(query).toContain(userIdFilter);
   });
 
   it('uses EUID field evaluations for entity.namespace derivation', () => {
@@ -30,16 +37,10 @@ describe('communicates_with Jamf Pro buildEsqlQuery', () => {
     expect(query).toContain('EVAL');
   });
 
-  it('builds actorUserId from user.email or user.name with @jamf_pro suffix', () => {
+  it('derives actorUserId from the standard user EUID evaluation', () => {
     const query = buildEsqlQuery('default');
-    expect(query).toContain('CONCAT("user:", user.email, "@", entity.namespace)');
-    expect(query).toContain('CONCAT("user:", user.name, "@", entity.namespace)');
-  });
-
-  it('does NOT reference user.id or user.domain (unmapped in Jamf Pro)', () => {
-    const query = buildEsqlQuery('default');
-    expect(query).not.toMatch(/\buser\.id\b/);
-    expect(query).not.toMatch(/\buser\.domain\b/);
+    const userEuidEval = euid.esql.getEuidEvaluation('user', { withTypeId: true });
+    expect(query).toContain(`actorUserId = ${userEuidEval}`);
   });
 
   it('builds targetEntityId with host: prefix from host.id or host.name', () => {

@@ -5,6 +5,8 @@
  * 2.0.
  */
 
+import { euid } from '@kbn/entity-store/common/euid_helpers';
+
 import { buildEsqlQuery } from './build_esql_query';
 
 describe('communicates_with Azure Sign-in Logs buildEsqlQuery', () => {
@@ -13,16 +15,20 @@ describe('communicates_with Azure Sign-in Logs buildEsqlQuery', () => {
     expect(buildEsqlQuery('production')).toContain('FROM logs-azure.signinlogs-production');
   });
 
+  it('sets unmapped_fields to nullify so unmapped columns become NULL instead of errors', () => {
+    const query = buildEsqlQuery('default');
+    expect(query).toMatch(/^SET unmapped_fields="nullify";\n/);
+  });
+
   it('requires app_display_name to be non-null', () => {
     const query = buildEsqlQuery('default');
     expect(query).toContain('azure.signinlogs.properties.app_display_name IS NOT NULL');
   });
 
-  it('requires at least one of user.email, user.id, or user.name', () => {
+  it('uses the standard user EUID documents-contains-id filter', () => {
     const query = buildEsqlQuery('default');
-    expect(query).toContain(
-      'user.email IS NOT NULL OR user.id IS NOT NULL OR user.name IS NOT NULL'
-    );
+    const userIdFilter = euid.esql.getEuidDocumentsContainsIdFilter('user');
+    expect(query).toContain(userIdFilter);
   });
 
   it('uses EUID field evaluations for entity.namespace derivation', () => {
@@ -31,16 +37,10 @@ describe('communicates_with Azure Sign-in Logs buildEsqlQuery', () => {
     expect(query).toContain('EVAL');
   });
 
-  it('builds actorUserId from user.email, user.id, or user.name with @entra_id suffix', () => {
+  it('derives actorUserId from the standard user EUID evaluation', () => {
     const query = buildEsqlQuery('default');
-    expect(query).toContain('CONCAT("user:", user.email, "@", entity.namespace)');
-    expect(query).toContain('CONCAT("user:", user.id, "@", entity.namespace)');
-    expect(query).toContain('CONCAT("user:", user.name, "@", entity.namespace)');
-  });
-
-  it('does NOT reference user.domain (unmapped in Azure Sign-in Logs)', () => {
-    const query = buildEsqlQuery('default');
-    expect(query).not.toMatch(/\buser\.domain\b/);
+    const userEuidEval = euid.esql.getEuidEvaluation('user', { withTypeId: true });
+    expect(query).toContain(`actorUserId = ${userEuidEval}`);
   });
 
   it('constructs target EUID as service: + app_display_name', () => {

@@ -10,25 +10,17 @@ import { euid } from '@kbn/entity-store/common/euid_helpers';
 import { COMPOSITE_PAGE_SIZE } from '../../constants';
 import { getIndexPattern } from './constants';
 
-/**
- * Azure Sign-in Logs uses field evaluations from the EUID helpers for
- * entity.namespace derivation but a hand-written actorUserId CASE because
- * `logs-azure.signinlogs-*` lacks `user.domain`.  The full
- * `euid.esql.getEuidEvaluation('user')` would reference that unmapped field
- * and cause a verification_exception.
- */
 export function buildEsqlQuery(namespace: string): string {
   const userFieldEvals = euid.esql.getFieldEvaluations('user');
   const userFieldEvalsLine = userFieldEvals ? `| EVAL ${userFieldEvals}\n` : '';
+  const userIdFilter = euid.esql.getEuidDocumentsContainsIdFilter('user');
+  const userEuidEval = euid.esql.getEuidEvaluation('user', { withTypeId: true });
 
-  return `FROM ${getIndexPattern(namespace)}
+  return `SET unmapped_fields="nullify";
+FROM ${getIndexPattern(namespace)}
 | WHERE azure.signinlogs.properties.app_display_name IS NOT NULL
-    AND (user.email IS NOT NULL OR user.id IS NOT NULL OR user.name IS NOT NULL)
-${userFieldEvalsLine}| EVAL actorUserId = CASE(
-    (user.email IS NOT NULL AND user.email != ""), CONCAT("user:", user.email, "@", entity.namespace),
-    (user.id IS NOT NULL AND user.id != ""), CONCAT("user:", user.id, "@", entity.namespace),
-    (user.name IS NOT NULL AND user.name != ""), CONCAT("user:", user.name, "@", entity.namespace),
-    NULL)
+    AND (${userIdFilter})
+${userFieldEvalsLine}| EVAL actorUserId = ${userEuidEval}
 | WHERE actorUserId IS NOT NULL AND actorUserId != ""
 | EVAL targetEntityId = CONCAT("service:", azure.signinlogs.properties.app_display_name)
 | WHERE targetEntityId IS NOT NULL AND targetEntityId != "service:"

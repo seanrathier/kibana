@@ -14,6 +14,11 @@ describe('communicates_with Okta buildEsqlQuery', () => {
     expect(buildEsqlQuery('production')).toContain('FROM logs-okta.system-production');
   });
 
+  it('sets unmapped_fields to nullify so unmapped columns become NULL instead of errors', () => {
+    const query = buildEsqlQuery('default');
+    expect(query).toMatch(/^SET unmapped_fields="nullify";\n/);
+  });
+
   it('filters for auth event actions', () => {
     const query = buildEsqlQuery('default');
     for (const action of OKTA_AUTH_EVENT_ACTIONS) {
