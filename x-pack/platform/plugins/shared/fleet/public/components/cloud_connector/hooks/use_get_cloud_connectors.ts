@@ -120,13 +120,6 @@ export const useGetCloudConnectors = (filterOptions?: CloudConnectorQueryFilterO
       ? getPolicyGroupForIntegration(packageName, policyTemplate)
       : undefined;
 
-  if (packageName && policyTemplate && !currentPolicyGroup) {
-    // eslint-disable-next-line no-console
-    console.debug(
-      `[CloudConnector] Integration "${packageName}/${policyTemplate}" is not in any policy group — connector filtering skipped`
-    );
-  }
-
   return useQuery(
     [
       CLOUD_CONNECTOR_QUERY_KEY,
