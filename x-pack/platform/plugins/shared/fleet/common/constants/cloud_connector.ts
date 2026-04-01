@@ -92,7 +92,6 @@ export const CLOUD_CONNECTOR_PERMISSION_ALLOWLIST: Record<
   ],
   aws_global_policy_group: [
     { provider: 'aws', package: 'aws', policyTemplate: 'guardduty' },
-    { provider: 'aws', package: 'aws', policyTemplate: 'cloudtrail' },
     { provider: 'aws', package: 'aws', policyTemplate: 's3' },
   ],
 };
