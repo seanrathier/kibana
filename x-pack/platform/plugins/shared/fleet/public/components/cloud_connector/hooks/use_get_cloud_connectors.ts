@@ -120,6 +120,13 @@ export const useGetCloudConnectors = (filterOptions?: CloudConnectorQueryFilterO
       ? getPolicyGroupForIntegration(packageName, policyTemplate)
       : undefined;
 
+  if (packageName && policyTemplate && !currentPolicyGroup) {
+    // eslint-disable-next-line no-console
+    console.debug(
+      `[CloudConnector] Integration "${packageName}/${policyTemplate}" is not in any policy group — connector filtering skipped`
+    );
+  }
+
   return useQuery(
     [
       CLOUD_CONNECTOR_QUERY_KEY,
@@ -138,32 +145,36 @@ export const useGetCloudConnectors = (filterOptions?: CloudConnectorQueryFilterO
 
       const compatiblePackages = getCompatiblePackageNames(currentPolicyGroup);
 
-      // For connectors with no linked policies, they're available to any group
-      // For connectors with linked policies, check that all belong to the same group
-      const usageResults = await Promise.allSettled(
+      // For connectors with no linked policies, they're available to any group.
+      // For connectors with linked policies, check that all belong to the same group.
+      // Results are keyed by connector ID to avoid fragile index-based mapping.
+      const usageResultMap = new Map<string, { connector: CloudConnector; compatible: boolean }>();
+
+      await Promise.allSettled(
         connectors.map(async (connector) => {
-          // Skip usage check for connectors with no linked policies
           if (!connector.packagePolicyCount || connector.packagePolicyCount === 0) {
-            return { connector, compatible: true };
+            usageResultMap.set(connector.id, { connector, compatible: true });
+            return;
           }
 
-          const usage = await fetchCloudConnectorUsage(http, connector.id);
-          return {
-            connector,
-            compatible: isConnectorCompatibleWithGroup(usage.items, compatiblePackages),
-          };
+          try {
+            const usage = await fetchCloudConnectorUsage(http, connector.id);
+            usageResultMap.set(connector.id, {
+              connector,
+              compatible: isConnectorCompatibleWithGroup(usage.items, compatiblePackages),
+            });
+          } catch {
+            // On transient errors, treat the connector as compatible so it isn't silently hidden
+            usageResultMap.set(connector.id, { connector, compatible: true });
+          }
         })
       );
 
-      return usageResults
-        .map((result, index) => {
-          if (result.status === 'fulfilled') {
-            return result.value;
-          }
-          // On transient errors, treat the connector as compatible so it isn't silently hidden
-          return { connector: connectors[index], compatible: true };
-        })
-        .filter(({ compatible }) => compatible)
+      return connectors
+        .map((connector) => usageResultMap.get(connector.id))
+        .filter((entry): entry is { connector: CloudConnector; compatible: boolean } =>
+          Boolean(entry?.compatible)
+        )
         .map(({ connector }) => connector);
     },
     {
