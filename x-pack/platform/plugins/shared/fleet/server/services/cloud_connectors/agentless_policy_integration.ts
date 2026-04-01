@@ -153,8 +153,9 @@ export async function createAndIntegrateCloudConnector(params: {
           }
         }
       } else {
+        const missingParam = !policyTemplate ? 'policyTemplate' : 'packageInfo.name';
         logger.warn(
-          `Cloud connector policy group enforcement skipped: policyTemplate not provided for package ${packageInfo.name}`
+          `Cloud connector policy group enforcement skipped: ${missingParam} not provided`
         );
       }
 
