@@ -20,22 +20,32 @@ const ENTITY_STORE_STATUS = ['GET', 'ENTITY_STORE_STATUS'];
 interface Options {
   withComponents?: boolean;
   enabled?: boolean;
+  refetchInterval?:
+    | number
+    | false
+    | ((data: GetEntityStoreStatusResponse | undefined) => number | false);
+  structuralSharing?: boolean;
 }
 
 export const useEntityStoreStatus = (opts: Options = {}) => {
   const { getEntityStoreStatus } = useEntityStoreRoutes();
 
-  return useQuery<GetEntityStoreStatusResponse, IHttpFetchError>({
-    queryKey: [...ENTITY_STORE_STATUS, opts.withComponents],
-    queryFn: () => getEntityStoreStatus(opts.withComponents),
-    enabled: opts.enabled !== false,
-    refetchInterval: (data) => {
-      if (data?.status === 'installing') {
-        return 5000;
-      }
-      return false;
-    },
-  });
+  return useQuery<GetEntityStoreStatusResponse, IHttpFetchError>(
+    [...ENTITY_STORE_STATUS, opts.withComponents],
+    () => getEntityStoreStatus(opts.withComponents),
+    {
+      enabled: opts.enabled !== false,
+      structuralSharing: opts.structuralSharing,
+      refetchInterval:
+        opts.refetchInterval ??
+        ((data) => {
+          if (data?.status === 'installing') {
+            return 5000;
+          }
+          return false;
+        }),
+    }
+  );
 };
 
 interface ResponseError {
