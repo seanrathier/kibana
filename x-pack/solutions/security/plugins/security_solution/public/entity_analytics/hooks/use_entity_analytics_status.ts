@@ -48,6 +48,9 @@ const deriveEntityStoreOnlyStatus = (entityStoreStatus?: StoreStatus): EntityAna
   if (!isStoreInstalled(entityStoreStatus)) {
     return 'not_installed';
   }
+  if (entityStoreStatus === 'error') {
+    return 'error';
+  }
   return entityStoreStatus === 'running' ? 'enabled' : 'disabled';
 };
 

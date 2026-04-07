@@ -176,6 +176,9 @@ export const useToggleEntityAnalytics = ({
           await enableEntityStore();
 
           if (riskEngineStatus === RiskEngineStatusEnum.NOT_INSTALLED || !riskEngineStatus) {
+            if (!selectedSettingsMatchSavedSettings) {
+              await onSaveSettings();
+            }
             await initRiskEngineMutation.mutateAsync(undefined);
           } else if (riskEngineStatus === RiskEngineStatusEnum.DISABLED) {
             await enableRiskEngineMutation.mutateAsync(undefined);
