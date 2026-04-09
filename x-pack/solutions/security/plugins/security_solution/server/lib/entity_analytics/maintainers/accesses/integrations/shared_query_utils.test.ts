@@ -5,6 +5,7 @@
  * 2.0.
  */
 
+import type { QueryDslQueryContainer } from '@elastic/elasticsearch/lib/api/types';
 import {
   buildCompositeAggQueryBase,
   buildBucketUserFilter,
@@ -44,12 +45,11 @@ describe('buildCompositeAggQueryBase', () => {
       const query = buildCompositeAggQueryBase(sampleFilters);
       const filters = query.query.bool.filter;
       const rangeFilter = filters.find(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (f: any) => f.range?.['@timestamp']
+        (f: QueryDslQueryContainer | undefined): f is QueryDslQueryContainer =>
+          f !== undefined && f.range?.['@timestamp'] !== undefined
       );
       expect(rangeFilter).toBeDefined();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect((rangeFilter as any).range['@timestamp'].gte).toBe(LOOKBACK_WINDOW);
+      expect(rangeFilter?.range?.['@timestamp']?.gte).toBe(LOOKBACK_WINDOW);
     });
 
     it('sets size to 0 (no hits, aggregations only)', () => {
@@ -180,11 +180,11 @@ describe('buildAccessEsqlQuery', () => {
     expect(query).toContain('EVAL actorUserId =');
   });
 
-  it('computes targetEntityId with COALESCE fallback to host.ip and host.mac', () => {
+  it('computes targetEntityId using the host EUID evaluation with the host: prefix', () => {
     const query = buildAccessEsqlQuery(indexPattern, whereClause);
-    expect(query).toContain('COALESCE(');
-    expect(query).toContain('TO_STRING(host.ip)');
-    expect(query).toContain('TO_STRING(host.mac)');
+    expect(query).toContain('EVAL targetEntityId = CONCAT("host:",');
+    expect(query).not.toContain('TO_STRING(host.ip)');
+    expect(query).not.toContain('TO_STRING(host.mac)');
   });
 
   it('uses MV_EXPAND on targetEntityId', () => {
