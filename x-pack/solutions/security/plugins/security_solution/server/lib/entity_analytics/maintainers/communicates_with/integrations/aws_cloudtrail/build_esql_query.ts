@@ -21,12 +21,13 @@ export function buildEsqlQuery(namespace: string): string {
   return `SET unmapped_fields="nullify";
 FROM ${getIndexPattern(namespace)}
 | WHERE aws.cloudtrail.user_identity.type IN (${iamTypesLiteral})
-    AND event.provider IS NOT NULL
+    AND host.target.entity.id IS NOT NULL
     AND (${userIdFilter})
 ${userFieldEvalsLine}| EVAL actorUserId = ${userEuidEval}
 | WHERE actorUserId IS NOT NULL AND actorUserId != ""
-| EVAL targetEntityId = CONCAT("service:", event.provider)
-| WHERE targetEntityId IS NOT NULL AND targetEntityId != "service:"
+| EVAL targetEntityId = CONCAT("host:", host.target.entity.id)
+| MV_EXPAND targetEntityId
+| WHERE targetEntityId IS NOT NULL AND targetEntityId != "host:"
 | STATS communicates_with = VALUES(targetEntityId) BY actorUserId
 | LIMIT ${COMPOSITE_PAGE_SIZE}`;
 }
