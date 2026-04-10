@@ -26,6 +26,11 @@ import {
  * ranking: host:{displayName}.
  */
 export function buildEsqlQuery(namespace: string): string {
+  // Azure Audit Logs records can list multiple target resources per operation, but
+  // only the first target (target_resources.0.*) is mapped by the ingest pipeline.
+  // Multi-target operations (e.g. bulk role assignments) will only capture the
+  // first target as a communicates_with relationship.
+  //
   // ES|QL cannot parse field names containing numeric path components (e.g. .0.)
   // without backtick escaping — plain dot-notation fails with "mismatched input '.0'".
   // The actor UPN field has no numeric component and does not need escaping.

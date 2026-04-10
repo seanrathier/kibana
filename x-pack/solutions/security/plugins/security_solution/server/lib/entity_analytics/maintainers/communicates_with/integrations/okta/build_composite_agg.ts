@@ -13,7 +13,7 @@ export const buildCompositeAggQuery = (afterKey?: CompositeAfterKey) =>
   buildCompositeAggQueryBase(
     [
       { terms: { 'event.action': OKTA_USER_ADMIN_EVENT_ACTIONS } },
-      { exists: { field: 'user.target.id' } },
+      { exists: { field: 'user.target.email' } },
     ],
     afterKey
   );
