@@ -53,7 +53,7 @@ FROM ${getIndexPattern(namespace)}
     NULL
   )
 | WHERE actorUserId != "user:@entra_id"
-    AND targetEntityId IS NOT NULL AND targetEntityId != "" AND targetEntityId != "host:"
+    AND targetEntityId IS NOT NULL AND targetEntityId != "" AND targetEntityId != "host:" AND targetEntityId != "user:@entra_id"
 | STATS communicates_with = VALUES(targetEntityId) BY actorUserId
 | LIMIT ${COMPOSITE_PAGE_SIZE}`;
 }

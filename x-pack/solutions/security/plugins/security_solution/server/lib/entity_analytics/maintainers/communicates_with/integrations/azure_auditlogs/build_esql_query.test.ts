@@ -83,6 +83,11 @@ describe('communicates_with Azure Audit Logs buildEsqlQuery', () => {
     expect(query).toContain('targetEntityId != "host:"');
   });
 
+  it('guards against empty user target EUID', () => {
+    const query = buildEsqlQuery('default');
+    expect(query).toContain('targetEntityId != "user:@entra_id"');
+  });
+
   it('does not reference the old signinlogs fields or service: pattern', () => {
     const query = buildEsqlQuery('default');
     expect(query).not.toContain('signinlogs');

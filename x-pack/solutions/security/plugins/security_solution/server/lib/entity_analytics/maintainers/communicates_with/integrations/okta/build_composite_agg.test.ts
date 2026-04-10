@@ -18,10 +18,10 @@ describe('communicates_with Okta buildCompositeAggQuery', () => {
     });
   });
 
-  it('requires user.target.id to exist', () => {
+  it('requires user.target.email to exist', () => {
     const query = buildCompositeAggQuery();
     expect(query.query.bool.filter).toContainEqual({
-      exists: { field: 'user.target.id' },
+      exists: { field: 'user.target.email' },
     });
   });
 
