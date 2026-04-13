@@ -564,7 +564,11 @@ describe('runMaintainer', () => {
     it('skips bulk update when aborted after collecting records', async () => {
       const abortCtrl = new AbortController();
       const records: ProcessedEntityRecord[] = [
-        { entityId: 'user-1', accesses_frequently: { ids: ['host-a'] }, accesses_infrequently: { ids: [] } },
+        {
+          entityId: 'user-1',
+          accesses_frequently: { ids: ['host-a'] },
+          accesses_infrequently: { ids: [] },
+        },
       ];
 
       esClient.search.mockResolvedValueOnce(createAggResponse([createBucket('user-1')]));
