@@ -73,10 +73,9 @@ describe('communicates_with updateEntityRelationships', () => {
     });
     await updateEntityRelationships(crudClient, logger, [record]);
     const { objects } = (crudClient.bulkUpdateEntity as jest.Mock).mock.calls[0][0];
-    expect(objects[0].doc.entity.relationships.communicates_with).toEqual([
-      'service:s3.amazonaws.com',
-      'service:ec2.amazonaws.com',
-    ]);
+    expect(objects[0].doc.entity.relationships.communicates_with).toEqual({
+      ids: ['service:s3.amazonaws.com', 'service:ec2.amazonaws.com'],
+    });
   });
 
   it('sets entity.id to entityId', async () => {
@@ -154,9 +153,9 @@ describe('communicates_with updateEntityRelationships', () => {
     const { objects } = (crudClient.bulkUpdateEntity as jest.Mock).mock.calls[0][0];
     expect(objects).toHaveLength(1);
     expect(objects[0].doc.entity.id).toBe('user:alice@acme.com@entra_id');
-    expect(objects[0].doc.entity.relationships.communicates_with).toEqual(
-      expect.arrayContaining(['service:Microsoft Teams', 'service:Slack'])
-    );
+    expect(objects[0].doc.entity.relationships.communicates_with).toEqual({
+      ids: expect.arrayContaining(['service:Microsoft Teams', 'service:Slack']),
+    });
   });
 
   it('deduplicates identical target strings when merging records', async () => {
@@ -174,7 +173,7 @@ describe('communicates_with updateEntityRelationships', () => {
     await updateEntityRelationships(crudClient, logger, records);
     const { objects } = (crudClient.bulkUpdateEntity as jest.Mock).mock.calls[0][0];
     expect(objects).toHaveLength(1);
-    const targets = objects[0].doc.entity.relationships.communicates_with;
+    const { ids: targets } = objects[0].doc.entity.relationships.communicates_with;
     expect(targets).toHaveLength(3);
     expect(targets).toEqual(
       expect.arrayContaining([

@@ -49,7 +49,7 @@ export async function updateEntityRelationships(
       entity: {
         id: entityId,
         relationships: {
-          communicates_with: Array.from(targets),
+          communicates_with: { ids: Array.from(targets) },
         },
       },
     } as Entity,
