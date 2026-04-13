@@ -193,4 +193,59 @@ describe('accesses updateEntityRelationships', () => {
       expect.objectContaining({ force: true })
     );
   });
+
+  it('deduplicates frequently IDs when the same host appears in multiple records', async () => {
+    const crudClient = createCrudClient();
+    const records = [
+      createRecord({
+        entityId: 'user:alice@acme.com@aws',
+        accesses_frequently: { ids: ['host:workstation-01', 'host:server-99'] },
+        accesses_infrequently: { ids: [] },
+      }),
+      createRecord({
+        entityId: 'user:alice@acme.com@aws',
+        accesses_frequently: { ids: ['host:workstation-01', 'host:server-42'] },
+        accesses_infrequently: { ids: [] },
+      }),
+    ];
+    await updateEntityRelationships(crudClient, logger, records);
+    const { objects } = (crudClient.bulkUpdateEntity as jest.Mock).mock.calls[0][0];
+    expect(objects).toHaveLength(1);
+    const ids = objects[0].doc.entity.relationships.accesses_frequently.ids;
+    expect(ids).toHaveLength(3);
+    expect(ids).toEqual(
+      expect.arrayContaining(['host:workstation-01', 'host:server-99', 'host:server-42'])
+    );
+  });
+
+  it('deduplicates infrequently IDs when the same host appears in multiple records', async () => {
+    const crudClient = createCrudClient();
+    const records = [
+      createRecord({
+        entityId: 'user:alice@acme.com@aws',
+        accesses_frequently: { ids: [] },
+        accesses_infrequently: { ids: ['host:lab-01', 'host:lab-02'] },
+      }),
+      createRecord({
+        entityId: 'user:alice@acme.com@aws',
+        accesses_frequently: { ids: [] },
+        accesses_infrequently: { ids: ['host:lab-01', 'host:lab-03'] },
+      }),
+    ];
+    await updateEntityRelationships(crudClient, logger, records);
+    const { objects } = (crudClient.bulkUpdateEntity as jest.Mock).mock.calls[0][0];
+    expect(objects).toHaveLength(1);
+    const ids = objects[0].doc.entity.relationships.accesses_infrequently.ids;
+    expect(ids).toHaveLength(3);
+    expect(ids).toEqual(
+      expect.arrayContaining(['host:lab-01', 'host:lab-02', 'host:lab-03'])
+    );
+  });
+
+  it('sets the bulk object type to user', async () => {
+    const crudClient = createCrudClient();
+    await updateEntityRelationships(crudClient, logger, [createRecord()]);
+    const { objects } = (crudClient.bulkUpdateEntity as jest.Mock).mock.calls[0][0];
+    expect(objects[0].type).toBe('user');
+  });
 });
