@@ -18,9 +18,9 @@ function buildEntityDoc(record: ProcessedEntityRecord): Entity {
       id: record.entityId,
       relationships: {
         accesses_frequently:
-          record.accesses_frequently.length > 0 ? record.accesses_frequently : undefined,
+          record.accesses_frequently.ids.length > 0 ? record.accesses_frequently : undefined,
         accesses_infrequently:
-          record.accesses_infrequently.length > 0 ? record.accesses_infrequently : undefined,
+          record.accesses_infrequently.ids.length > 0 ? record.accesses_infrequently : undefined,
       },
     },
   } as Entity;
