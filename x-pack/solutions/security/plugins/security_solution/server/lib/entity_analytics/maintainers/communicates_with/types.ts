@@ -19,6 +19,6 @@ export interface ProcessedEntityRecord {
   entityId: string | null;
   /** The entity type of the actor (e.g. "user"). */
   entityType: string;
-  /** Plain EUID strings, e.g. "service:s3.amazonaws.com". */
-  communicates_with: string[];
+  /** Target entity EUIDs wrapped in the EntityRelationship ids shape. */
+  communicates_with: { ids: string[] };
 }

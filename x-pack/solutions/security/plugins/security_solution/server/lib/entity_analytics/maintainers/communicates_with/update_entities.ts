@@ -19,14 +19,14 @@ interface MergedEntity {
 function mergeRecordsByEntityId(records: ProcessedEntityRecord[]): Map<string, MergedEntity> {
   const merged = new Map<string, MergedEntity>();
   for (const r of records) {
-    if (r.entityId && r.communicates_with.length > 0) {
+    if (r.entityId && r.communicates_with.ids.length > 0) {
       const existing = merged.get(r.entityId);
       if (existing) {
-        for (const t of r.communicates_with) existing.targets.add(t);
+        for (const t of r.communicates_with.ids) existing.targets.add(t);
       } else {
         merged.set(r.entityId, {
           entityType: r.entityType,
-          targets: new Set(r.communicates_with),
+          targets: new Set(r.communicates_with.ids),
         });
       }
     }

@@ -33,7 +33,7 @@ export function postProcessEsqlResults(
     return {
       entityId: toStringArray(record.actorUserId)[0] ?? null,
       entityType,
-      communicates_with: toStringArray(record.communicates_with),
+      communicates_with: { ids: toStringArray(record.communicates_with) },
     };
   });
 }
