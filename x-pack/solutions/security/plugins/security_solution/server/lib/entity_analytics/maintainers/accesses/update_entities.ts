@@ -6,7 +6,7 @@
  */
 
 import type { Logger } from '@kbn/logging';
-import type { EntityUpdateClient } from '@kbn/entity-store/server';
+import type { EntityUpdateClient, BulkObject } from '@kbn/entity-store/server';
 import type { EntityType } from '@kbn/entity-store/common';
 import type { Entity } from '@kbn/entity-store/common/domain/definitions/entity.gen';
 
@@ -21,7 +21,10 @@ function mergeRecordsByEntityId(records: ProcessedEntityRecord[]): Map<string, M
   const merged = new Map<string, MergedEntity>();
 
   for (const r of records) {
-    if (r.entityId) {
+    if (
+      r.entityId &&
+      (r.accesses_frequently.ids.length > 0 || r.accesses_infrequently.ids.length > 0)
+    ) {
       const existing = merged.get(r.entityId);
       if (existing) {
         for (const h of r.accesses_frequently.ids) existing.frequently.add(h);
@@ -43,20 +46,6 @@ function mergeRecordsByEntityId(records: ProcessedEntityRecord[]): Map<string, M
   return merged;
 }
 
-function buildEntityDoc(record: ProcessedEntityRecord): Entity {
-  return {
-    entity: {
-      id: record.entityId,
-      relationships: {
-        accesses_frequently:
-          record.accesses_frequently.ids.length > 0 ? record.accesses_frequently : undefined,
-        accesses_infrequently:
-          record.accesses_infrequently.ids.length > 0 ? record.accesses_infrequently : undefined,
-      },
-    },
-  } as Entity;
-}
-
 export async function updateEntityRelationships(
   crudClient: EntityUpdateClient,
   logger: Logger,
@@ -67,14 +56,23 @@ export async function updateEntityRelationships(
   const entityType: EntityType = 'user';
   const merged = mergeRecordsByEntityId(records);
 
-  const objects = Array.from(merged, ([entityId, { frequently, infrequently }]) => ({
-    type: entityType,
-    doc: buildEntityDoc({
-      entityId,
-      accesses_frequently: { ids: Array.from(frequently) },
-      accesses_infrequently: { ids: Array.from(infrequently) },
-    }),
-  }));
+  const objects: BulkObject[] = Array.from(merged, ([entityId, { frequently, infrequently }]) => {
+    const frequentlyIds = Array.from(frequently);
+    const infrequentlyIds = Array.from(infrequently);
+    return {
+      type: entityType as BulkObject['type'],
+      doc: {
+        entity: {
+          id: entityId,
+          relationships: {
+            accesses_frequently: frequentlyIds.length > 0 ? { ids: frequentlyIds } : undefined,
+            accesses_infrequently:
+              infrequentlyIds.length > 0 ? { ids: infrequentlyIds } : undefined,
+          },
+        },
+      } as Entity,
+    };
+  });
 
   if (objects.length === 0) return 0;
 
