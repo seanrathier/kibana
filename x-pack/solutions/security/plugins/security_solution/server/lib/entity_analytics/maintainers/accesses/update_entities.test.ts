@@ -42,10 +42,7 @@ describe('accesses updateEntityRelationships', () => {
 
   it('returns 0 without calling the API when all records have null entityId', async () => {
     const crudClient = createCrudClient();
-    const records = [
-      createRecord({ entityId: null }),
-      createRecord({ entityId: null }),
-    ];
+    const records = [createRecord({ entityId: null }), createRecord({ entityId: null })];
     const result = await updateEntityRelationships(crudClient, logger, records);
     expect(result).toBe(0);
     expect(crudClient.bulkUpdateEntity).not.toHaveBeenCalled();
@@ -55,7 +52,10 @@ describe('accesses updateEntityRelationships', () => {
     const crudClient = createCrudClient();
     const records = [
       createRecord({ entityId: null, accesses_frequently: { ids: ['host:ghost'] } }),
-      createRecord({ entityId: 'user:alice@acme.com@aws', accesses_frequently: { ids: ['host:workstation-01'] } }),
+      createRecord({
+        entityId: 'user:alice@acme.com@aws',
+        accesses_frequently: { ids: ['host:workstation-01'] },
+      }),
     ];
     await updateEntityRelationships(crudClient, logger, records);
     const { objects } = (crudClient.bulkUpdateEntity as jest.Mock).mock.calls[0][0];
@@ -156,7 +156,10 @@ describe('accesses updateEntityRelationships', () => {
       createRecord({ entityId: 'user:a@acme.com@aws' }),
       createRecord({ entityId: 'user:b@acme.com@aws' }),
       createRecord({ entityId: 'user:c@acme.com@aws' }),
-      createRecord({ entityId: 'user:a@acme.com@aws', accesses_frequently: { ids: ['host:extra'] } }),
+      createRecord({
+        entityId: 'user:a@acme.com@aws',
+        accesses_frequently: { ids: ['host:extra'] },
+      }),
     ];
     await updateEntityRelationships(crudClient, logger, records);
     expect(crudClient.bulkUpdateEntity).toHaveBeenCalledTimes(1);
@@ -166,7 +169,10 @@ describe('accesses updateEntityRelationships', () => {
     const crudClient = createCrudClient([]);
     const records = [
       createRecord({ entityId: 'user:a@acme.com@aws' }),
-      createRecord({ entityId: 'user:a@acme.com@aws', accesses_frequently: { ids: ['host:extra'] } }),
+      createRecord({
+        entityId: 'user:a@acme.com@aws',
+        accesses_frequently: { ids: ['host:extra'] },
+      }),
       createRecord({ entityId: 'user:b@acme.com@aws' }),
     ];
     const result = await updateEntityRelationships(crudClient, logger, records);
@@ -237,9 +243,7 @@ describe('accesses updateEntityRelationships', () => {
     expect(objects).toHaveLength(1);
     const ids = objects[0].doc.entity.relationships.accesses_infrequently.ids;
     expect(ids).toHaveLength(3);
-    expect(ids).toEqual(
-      expect.arrayContaining(['host:lab-01', 'host:lab-02', 'host:lab-03'])
-    );
+    expect(ids).toEqual(expect.arrayContaining(['host:lab-01', 'host:lab-02', 'host:lab-03']));
   });
 
   it('sets the bulk object type to user', async () => {
