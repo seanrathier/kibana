@@ -13,6 +13,7 @@ import {
 } from './shared_query_utils';
 import { COMPOSITE_PAGE_SIZE, LOOKBACK_WINDOW } from '../constants';
 import type { CompositeAfterKey, CompositeBucket } from '../types';
+import { euid } from '@kbn/entity-store/common/euid_helpers';
 
 describe('buildCompositeAggQueryBase', () => {
   const sampleFilters = [{ term: { 'event.action': 'test' } }];
@@ -180,11 +181,10 @@ describe('buildAccessEsqlQuery', () => {
     expect(query).toContain('EVAL actorUserId =');
   });
 
-  it('computes targetEntityId using the host EUID evaluation with the host: prefix', () => {
+  it('computes targetEntityId using the host EUID evaluation', () => {
     const query = buildAccessEsqlQuery(indexPattern, whereClause);
-    expect(query).toContain('EVAL targetEntityId = CONCAT("host:",');
-    expect(query).not.toContain('TO_STRING(host.ip)');
-    expect(query).not.toContain('TO_STRING(host.mac)');
+    const expectedHostEval = euid.esql.getEuidEvaluation('host', { withTypeId: true });
+    expect(query).toContain(`EVAL targetEntityId = ${expectedHostEval}`);
   });
 
   it('uses MV_EXPAND on targetEntityId', () => {
