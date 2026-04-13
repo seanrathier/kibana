@@ -39,7 +39,9 @@ describe('postprocessEsqlResults', () => {
   });
 
   it('wraps a single string accesses_frequently value in { ids: [value] }', () => {
-    const [record] = postprocessEsqlResults(COLUMNS, [['alice@corp', 'host:prod-db-01@corp', null]]);
+    const [record] = postprocessEsqlResults(COLUMNS, [
+      ['alice@corp', 'host:prod-db-01@corp', null],
+    ]);
     expect(record.accesses_frequently).toEqual({ ids: ['host:prod-db-01@corp'] });
   });
 
