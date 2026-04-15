@@ -18,29 +18,31 @@ interface MergedEntity {
 }
 
 function mergeRecordsByEntityId(records: ProcessedEntityRecord[]): Map<string, MergedEntity> {
-  const merged = new Map<string, MergedEntity>();
-
-  for (const r of records) {
-    if (
-      r.entityId &&
+  // Step 1: filter records that have at least one access and a valid entityId
+  const validRecords = records.filter(
+    (r): r is ProcessedEntityRecord & { entityId: string } =>
+      r.entityId !== null &&
       (r.accesses_frequently.ids.length > 0 || r.accesses_infrequently.ids.length > 0)
-    ) {
-      const existing = merged.get(r.entityId);
-      if (existing) {
-        for (const h of r.accesses_frequently.ids) existing.frequently.add(h);
-        for (const h of r.accesses_infrequently.ids) existing.infrequently.add(h);
-      } else {
-        merged.set(r.entityId, {
-          frequently: new Set(r.accesses_frequently.ids),
-          infrequently: new Set(r.accesses_infrequently.ids),
-        });
-      }
+  );
+
+  // Step 2: group by entityId, merging ids across records for the same entity
+  const merged = new Map<string, MergedEntity>();
+  for (const r of validRecords) {
+    const existing = merged.get(r.entityId);
+    if (existing) {
+      for (const id of r.accesses_frequently.ids) existing.frequently.add(id);
+      for (const id of r.accesses_infrequently.ids) existing.infrequently.add(id);
+    } else {
+      merged.set(r.entityId, {
+        frequently: new Set(r.accesses_frequently.ids),
+        infrequently: new Set(r.accesses_infrequently.ids),
+      });
     }
   }
 
-  // Precedence: accesses_frequently wins — remove from infrequently any host already in frequently
+  // Step 3: apply precedence — accesses_frequently wins, remove any overlap from infrequently
   for (const [, entity] of merged) {
-    for (const h of entity.frequently) entity.infrequently.delete(h);
+    for (const id of entity.frequently) entity.infrequently.delete(id);
   }
 
   return merged;
@@ -70,7 +72,7 @@ export async function updateEntityRelationships(
               infrequentlyIds.length > 0 ? { ids: infrequentlyIds } : undefined,
           },
         },
-      } as Entity,
+      } satisfies Entity,
     };
   });
 
