@@ -22,8 +22,7 @@ interface MergedEntity {
 
 function filterValid(records: ProcessedEntityRecord[]): ValidRecord[] {
   return records.filter(
-    (r): r is ValidRecord =>
-      r.entityId !== null && r.communicates_with.ids.length > 0
+    (r): r is ValidRecord => r.entityId !== null && r.communicates_with.ids.length > 0
   );
 }
 
