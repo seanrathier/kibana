@@ -10,42 +10,48 @@ import type { EntityUpdateClient, BulkObject } from '@kbn/entity-store/server';
 import type { EntityType } from '@kbn/entity-store/common';
 import type { Entity } from '@kbn/entity-store/common/domain/definitions/entity.gen';
 
+import { groupByEntityId } from '../group_by_entity_id';
 import type { ProcessedEntityRecord } from './types';
+
+type ValidRecord = ProcessedEntityRecord & { entityId: string };
 
 interface MergedEntity {
   frequently: Set<string>;
   infrequently: Set<string>;
 }
 
-function mergeRecordsByEntityId(records: ProcessedEntityRecord[]): Map<string, MergedEntity> {
-  // Step 1: filter records that have at least one access and a valid entityId
-  const validRecords = records.filter(
-    (r): r is ProcessedEntityRecord & { entityId: string } =>
+function filterValid(records: ProcessedEntityRecord[]): ValidRecord[] {
+  return records.filter(
+    (r): r is ValidRecord =>
       r.entityId !== null &&
       (r.accesses_frequently.ids.length > 0 || r.accesses_infrequently.ids.length > 0)
   );
+}
 
-  // Step 2: group by entityId, merging ids across records for the same entity
-  const merged = new Map<string, MergedEntity>();
-  for (const r of validRecords) {
-    const existing = merged.get(r.entityId);
-    if (existing) {
-      for (const id of r.accesses_frequently.ids) existing.frequently.add(id);
-      for (const id of r.accesses_infrequently.ids) existing.infrequently.add(id);
-    } else {
-      merged.set(r.entityId, {
-        frequently: new Set(r.accesses_frequently.ids),
-        infrequently: new Set(r.accesses_infrequently.ids),
-      });
-    }
-  }
+function seed(r: ValidRecord): MergedEntity {
+  return {
+    frequently: new Set(r.accesses_frequently.ids),
+    infrequently: new Set(r.accesses_infrequently.ids),
+  };
+}
 
-  // Step 3: apply precedence — accesses_frequently wins, remove any overlap from infrequently
-  for (const [, entity] of merged) {
+function merge(acc: MergedEntity, r: ValidRecord): MergedEntity {
+  for (const id of r.accesses_frequently.ids) acc.frequently.add(id);
+  for (const id of r.accesses_infrequently.ids) acc.infrequently.add(id);
+  return acc;
+}
+
+function applyPrecedence(grouped: Map<string, MergedEntity>): Map<string, MergedEntity> {
+  for (const entity of grouped.values()) {
     for (const id of entity.frequently) entity.infrequently.delete(id);
   }
+  return grouped;
+}
 
-  return merged;
+function mergeRecordsByEntityId(records: ProcessedEntityRecord[]): Map<string, MergedEntity> {
+  const valid = filterValid(records);
+  const grouped = groupByEntityId(valid, seed, merge);
+  return applyPrecedence(grouped);
 }
 
 export async function updateEntityRelationships(
@@ -62,7 +68,7 @@ export async function updateEntityRelationships(
     const frequentlyIds = Array.from(frequently);
     const infrequentlyIds = Array.from(infrequently);
     return {
-      type: entityType as BulkObject['type'],
+      type: entityType,
       doc: {
         entity: {
           id: entityId,
