@@ -7,12 +7,13 @@
 
 import type { Logger } from '@kbn/logging';
 import type { EntityUpdateClient, BulkObject } from '@kbn/entity-store/server';
+import type { EntityType } from '@kbn/entity-store/common';
 import type { Entity } from '@kbn/entity-store/common/domain/definitions/entity.gen';
 
 import type { ProcessedEntityRecord } from './types';
 
 interface MergedEntity {
-  entityType: string;
+  entityType: EntityType;
   targets: Set<string>;
 }
 
@@ -44,7 +45,7 @@ export async function updateEntityRelationships(
   const merged = mergeRecordsByEntityId(records);
 
   const objects: BulkObject[] = Array.from(merged, ([entityId, { entityType, targets }]) => ({
-    type: entityType as BulkObject['type'],
+    type: entityType,
     doc: {
       entity: {
         id: entityId,
@@ -52,7 +53,7 @@ export async function updateEntityRelationships(
           communicates_with: { ids: Array.from(targets) },
         },
       },
-    } as Entity,
+    } satisfies Entity,
   }));
 
   if (objects.length === 0) return 0;
