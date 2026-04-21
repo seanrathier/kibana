@@ -74,6 +74,9 @@ export const writeRawIdentifiers = async (
     }
     if (Object.keys(relationships).length === 0) continue;
 
+    // EntityField.relationships is strict-keyed in the Zod schema; raw_identifiers writes
+    // use partial update docs with arbitrary rel-type keys, so the full Entity type cannot
+    // be satisfied here. BulkObject accepts Entity only for structural typing purposes.
     objects.push({
       type: 'user',
       doc: {

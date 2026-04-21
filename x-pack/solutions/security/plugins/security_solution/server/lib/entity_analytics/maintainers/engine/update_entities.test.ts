@@ -109,4 +109,47 @@ describe('writeRawIdentifiers', () => {
     const result = await writeRawIdentifiers(crudClient, loggerMock.create(), records);
     expect(result).toBe(1);
   });
+
+  it('logs 404 errors at debug level, not error', async () => {
+    const logger = loggerMock.create();
+    const crudClient = makeCrudClient([{ status: 404 }]);
+    const records: ProcessedEngineRecord[] = [
+      {
+        entityId: 'user:alice@corp',
+        entityType: 'user',
+        relationships: { communicates_with: { 'entity.id': ['host:foo'] } },
+      },
+    ];
+    await writeRawIdentifiers(crudClient, logger, records);
+    expect(logger.debug).toHaveBeenCalled();
+    expect(logger.error).not.toHaveBeenCalled();
+  });
+
+  it('logs non-404 errors at error level', async () => {
+    const logger = loggerMock.create();
+    const crudClient = makeCrudClient([{ status: 500 }]);
+    const records: ProcessedEngineRecord[] = [
+      {
+        entityId: 'user:alice@corp',
+        entityType: 'user',
+        relationships: { communicates_with: { 'entity.id': ['host:foo'] } },
+      },
+    ];
+    await writeRawIdentifiers(crudClient, logger, records);
+    expect(logger.error).toHaveBeenCalled();
+  });
+
+  it('calls bulkUpdateEntity with force: true', async () => {
+    const crudClient = makeCrudClient();
+    const records: ProcessedEngineRecord[] = [
+      {
+        entityId: 'user:alice@corp',
+        entityType: 'user',
+        relationships: { communicates_with: { 'entity.id': ['host:foo'] } },
+      },
+    ];
+    await writeRawIdentifiers(crudClient, loggerMock.create(), records);
+    const [call] = (crudClient.bulkUpdateEntity as jest.Mock).mock.calls;
+    expect(call[0].force).toBe(true);
+  });
 });
