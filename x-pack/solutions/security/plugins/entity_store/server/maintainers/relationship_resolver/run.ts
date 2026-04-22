@@ -174,7 +174,9 @@ async function confirmEntityIds(
 
     for (const hit of response.hits.hits) {
       const source = hit._source as Record<string, unknown> | null;
-      const id = source?.['entity.id'] as string | undefined;
+      const id = (source?.['entity'] as Record<string, unknown> | undefined)?.['id'] as
+        | string
+        | undefined;
       if (id) confirmed.add(id);
     }
   }
