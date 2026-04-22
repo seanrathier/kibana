@@ -8,7 +8,7 @@
 import type { QueryDslQueryContainer } from '@elastic/elasticsearch/lib/api/types';
 
 import { LOOKBACK_WINDOW, COMPOSITE_PAGE_SIZE } from '../../constants';
-import type { CompositeAfterKey, CompositeBucket } from '../../types';
+import type { CompositeAfterKey, CompositeBucket } from '../../../engine/types';
 import {
   AZURE_AUDITLOGS_ACTOR_UPN_FIELD,
   AZURE_AUDITLOGS_TARGET_UPN_FIELD,

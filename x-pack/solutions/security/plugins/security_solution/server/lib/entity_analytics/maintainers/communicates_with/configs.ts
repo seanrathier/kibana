@@ -11,9 +11,15 @@ import {
   buildBucketUserFilter as azureBuildBucketFilter,
 } from './integrations/azure_auditlogs/build_composite_agg';
 import { buildEsqlQuery as azureBuildEsqlQuery } from './integrations/azure_auditlogs/build_esql_query';
-import { getIndexPattern as oktaIndexPattern, OKTA_USER_ADMIN_EVENT_ACTIONS } from './integrations/okta/constants';
+import {
+  getIndexPattern as oktaIndexPattern,
+  OKTA_USER_ADMIN_EVENT_ACTIONS,
+} from './integrations/okta/constants';
 import { getIndexPattern as jamfProIndexPattern } from './integrations/jamf_pro/constants';
-import { getIndexPattern as awsCloudtrailCommunicatesWithIndexPattern, HUMAN_IAM_IDENTITY_TYPES } from './integrations/aws_cloudtrail/constants';
+import {
+  getIndexPattern as awsCloudtrailCommunicatesWithIndexPattern,
+  HUMAN_IAM_IDENTITY_TYPES,
+} from './integrations/aws_cloudtrail/constants';
 import { getIndexPattern as azureAuditlogsIndexPattern } from './integrations/azure_auditlogs/constants';
 
 export const COMMUNICATES_WITH_ENGINE_CONFIGS: RelationshipIntegrationConfig[] = [
