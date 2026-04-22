@@ -26,6 +26,7 @@ import { CRUDClient } from './domain/crud';
 import { ResolutionClient } from './domain/resolution';
 import { registerTelemetry, createReportEvent } from './telemetry/events';
 import { automatedResolutionMaintainerConfig } from './maintainers/automated_resolution';
+import { relationshipResolverMaintainerConfig } from './maintainers/relationship_resolver';
 
 export class EntityStorePlugin
   implements
@@ -82,6 +83,14 @@ export class EntityStorePlugin
       taskManager: plugins.taskManager,
       logger: this.logger,
       config: automatedResolutionMaintainerConfig,
+      core,
+      analytics: createReportEvent(core.analytics),
+    });
+
+    registerEntityMaintainerTask({
+      taskManager: plugins.taskManager,
+      logger: this.logger,
+      config: relationshipResolverMaintainerConfig,
       core,
       analytics: createReportEvent(core.analytics),
     });
