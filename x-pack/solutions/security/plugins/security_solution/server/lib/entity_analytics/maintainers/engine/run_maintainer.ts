@@ -83,6 +83,7 @@ export const runGenericMaintainer = async ({
 
     let afterKey: CompositeAfterKey | undefined;
     let iterations = 0;
+    const transportOpts = abortController ? { signal: abortController.signal } : undefined;
 
     do {
       if (abortController?.signal.aborted) {
@@ -95,7 +96,11 @@ export const runGenericMaintainer = async ({
         break;
       }
 
-      const transportOpts = abortController ? { signal: abortController.signal } : undefined;
+      logger.info(
+        `[${config.id}] Running composite aggregation (afterKey: ${JSON.stringify(
+          afterKey ?? 'none'
+        )})`
+      );
 
       let aggResult;
       try {
@@ -138,7 +143,7 @@ export const runGenericMaintainer = async ({
         esqlResult = await esClient.esql.query({ query: esqlQuery, filter: esqlFilter }, transportOpts);
       } catch (err) {
         logger.error(`[${config.id}] ES|QL query failed: ${errMsg(err)}`);
-        break;
+        throw err;
       }
 
       const { columns, values } = esqlResult as unknown as EsqlQueryResult;
