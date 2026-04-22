@@ -78,6 +78,7 @@ export const runRelationshipResolver = async (
   );
 
   return {
+    ...state,
     lastProcessedTimestamp: new Date().toISOString(),
     lastRun: { entitiesResolved, entityIdsConfirmed },
   };
@@ -223,6 +224,6 @@ async function writeConfirmedIds(
     logger.error(`Failed to write ${realErrors.length} entities: ${JSON.stringify(realErrors)}`);
   }
 
-  const entitiesResolved = objects.length - errors.length;
+  const entitiesResolved = objects.length - realErrors.length;
   return { entitiesResolved, entityIdsConfirmed: totalConfirmed };
 }

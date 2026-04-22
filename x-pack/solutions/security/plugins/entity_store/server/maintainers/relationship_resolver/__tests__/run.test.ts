@@ -74,7 +74,6 @@ describe('runRelationshipResolver', () => {
     const esClient = makeEsClient([
       { hits: { hits: [entityDoc] } }, // Step 1: entities with raw_identifiers
       confirmResponse, // Step 2: confirm existence of raw ids
-      { hits: { hits: [] } }, // Step 1 pagination end
     ]);
     const crudClient = makeCrudClient();
     await runRelationshipResolver({
