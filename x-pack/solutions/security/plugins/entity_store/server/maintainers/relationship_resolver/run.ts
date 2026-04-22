@@ -122,10 +122,13 @@ async function collectEntitiesWithRawIdentifiers(
       const source = hit._source as Record<string, unknown> | null;
       if (!source) continue;
 
-      const entityId = source['entity.id'] as string | undefined;
+      const entitySource = source['entity'] as Record<string, unknown> | undefined;
+      if (!entitySource) continue;
+
+      const entityId = entitySource['id'] as string | undefined;
       if (!entityId) continue;
 
-      const entityRel = source['entity.relationships'] as Record<string, unknown> | undefined;
+      const entityRel = entitySource['relationships'] as Record<string, unknown> | undefined;
       if (!entityRel) continue;
 
       const relationships: Record<string, { rawIds: string[] }> = {};
