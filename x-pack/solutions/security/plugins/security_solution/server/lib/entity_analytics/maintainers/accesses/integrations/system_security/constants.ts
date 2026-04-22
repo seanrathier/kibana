@@ -5,10 +5,6 @@
  * 2.0.
  */
 
-export function getIndexPattern(namespace: string): string {
-  return `logs-system.security-${namespace}`;
-}
-
 export const EXCLUDED_USERNAMES = [
   'SYSTEM',
   'LOCAL SERVICE',

@@ -5,10 +5,6 @@
  * 2.0.
  */
 
-export function getIndexPattern(namespace: string): string {
-  return `logs-azure.auditlogs-${namespace}`;
-}
-
 /** Field holding the acting user's UPN (email) in Azure Audit Log documents. */
 export const AZURE_AUDITLOGS_ACTOR_UPN_FIELD =
   'azure.auditlogs.properties.initiated_by.user.userPrincipalName';

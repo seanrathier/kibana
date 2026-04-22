@@ -5,10 +5,6 @@
  * 2.0.
  */
 
-export function getIndexPattern(namespace: string): string {
-  return `logs-okta.system-${namespace}`;
-}
-
 /**
  * Okta event actions where an actor (admin user) operates on a target user.
  * These events have User-type entries in okta.target, which the ingest pipeline

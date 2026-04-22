@@ -7,7 +7,6 @@
 
 import { COMPOSITE_PAGE_SIZE } from '../../constants';
 import {
-  getIndexPattern,
   AZURE_AUDITLOGS_ACTOR_UPN_FIELD,
   AZURE_AUDITLOGS_TARGET_UPN_FIELD,
   AZURE_AUDITLOGS_TARGET_TYPE_FIELD,
@@ -39,7 +38,7 @@ export function buildEsqlQuery(namespace: string): string {
   const tDisplayName = `\`${AZURE_AUDITLOGS_TARGET_DISPLAY_NAME_FIELD}\``;
 
   return `SET unmapped_fields="nullify";
-FROM ${getIndexPattern(namespace)}
+FROM logs-azure.auditlogs-${namespace}
 | WHERE ${AZURE_AUDITLOGS_ACTOR_UPN_FIELD} IS NOT NULL
     AND (
       (${tType} == "User" AND ${tUpn} IS NOT NULL)

@@ -5,10 +5,6 @@
  * 2.0.
  */
 
-export function getIndexPattern(namespace: string): string {
-  return `logs-aws.cloudtrail-${namespace}`;
-}
-
 /**
  * IAM principal types that represent human actors.
  * Excludes AWSService (internal AWS-to-AWS) and AWSAccount (cross-account service calls).
