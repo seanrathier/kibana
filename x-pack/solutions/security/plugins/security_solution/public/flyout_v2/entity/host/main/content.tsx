@@ -111,6 +111,7 @@ export const Content = ({
         <EntityHighlightsAccordion
           entityIdentifier={entityRecord ? entityRecord.entity.id : hostName}
           entityType={EntityType.host}
+          entityRecord={entityRecord}
         />
       )}
       {!skipRiskAndCriticality &&
